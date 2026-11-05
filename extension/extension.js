@@ -59,6 +59,9 @@ Object.assign(T.uz, {
   as_sent_claude: "Claude maydoniga qo‘ying: Ctrl+V (Mac: ⌘V)", as_nothing_heard: "Hech narsa eshitilmadi — yana urinib ko‘ring", as_failed: "Javob bera olmadim. Claude’ga kirganmisiz? Yana urinib ko‘ring.",
   claude_ready: "Claude Code tayyor", claude_installing: "Claude Code o‘rnatilmoqda (150 MB)…", claude_missing: "Claude Code o‘rnatilmagan", claude_failed: "Claude Code o‘rnatilmadi — internetni tekshirib, qayta urinib ko‘ring",
   shot_cancelled: "Ekran rasmi olinmadi", voice_tail: " … davomi ekranda.",
+  as_need_mic: "Mac mikrofonga ruxsat bermagan. Ochilgan oynada MOOPI Desktop (yoki VSCodium) ni yoqing va dasturni qayta oching.",
+  as_need_screen: "Mac ekranni olishga ruxsat bermagan. Ochilgan oynada «Ekranni yozib olish» ro'yxatida MOOPI Desktop (yoki VSCodium) ni yoqing va dasturni qayta oching.",
+  as_too_short: "Juda qisqa — tugmani bosib, gapirib bo'lgach yana bosing.",
 });
 Object.assign(T.ru, {
   as_ready: "Готов. Говорите или пишите.", as_listening: "Слушаю… нажмите ещё раз, чтобы остановить", as_thinking: "Думаю…",
@@ -69,6 +72,9 @@ Object.assign(T.ru, {
   as_sent_claude: "Вставьте в поле Claude: Ctrl+V (Mac: ⌘V)", as_nothing_heard: "Ничего не услышал — попробуйте ещё", as_failed: "Не смог ответить. Вы вошли в Claude? Попробуйте ещё.",
   claude_ready: "Claude Code готов", claude_installing: "Claude Code устанавливается (150 МБ)…", claude_missing: "Claude Code не установлен", claude_failed: "Claude Code не установился — проверьте интернет и повторите",
   shot_cancelled: "Снимок экрана не сделан", voice_tail: " … дальше на экране.",
+  as_need_mic: "Mac не дал доступ к микрофону. В открывшемся окне включите MOOPI Desktop (или VSCodium) и перезапустите программу.",
+  as_need_screen: "Mac не дал доступ к записи экрана. В открывшемся окне в списке «Запись экрана» включите MOOPI Desktop (или VSCodium) и перезапустите программу.",
+  as_too_short: "Слишком коротко — нажмите, скажите и нажмите ещё раз.",
 });
 function lang() { return vscode.workspace.getConfiguration('moopi').get('language', 'uz') === 'ru' ? 'ru' : 'uz'; }
 function t(key) { return (T[lang()] && T[lang()][key]) || T.uz[key] || key; }
