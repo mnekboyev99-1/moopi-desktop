@@ -130,12 +130,20 @@ function openApp(context, api) {
 <body><iframe id="app" src="${url}?desktop=1" allow="clipboard-read; clipboard-write; microphone" referrerpolicy="origin"></iframe>
 <script nonce="${nonce}">
 const vscode = acquireVsCodeApi();
+const frame = document.getElementById('app'), home = ${JSON.stringify(url + '?desktop=1')};
+// The app announces itself ('ready' / 'signedIn') after every load. A load with no announcement means the
+// frame has wandered off to a page that is not the app (a sign-in provider, an error page): bring it back.
+let watchdog = null;
+frame.addEventListener('load', () => { clearTimeout(watchdog); watchdog = setTimeout(() => { frame.src = home; }, 8000); });
 window.addEventListener('message', (e) => {
-  if (e.origin === ${JSON.stringify(origin)} && e.data && typeof e.data === 'object' && e.data.moopi) vscode.postMessage(e.data);
+  if (e.origin !== ${JSON.stringify(origin)} || !e.data || typeof e.data !== 'object') return;
+  if (e.data.reload) { frame.src = home; return; }
+  if (e.data.moopi) { clearTimeout(watchdog); vscode.postMessage(e.data); }
 });
 </script></body></html>`;
   appPanel.webview.onDidReceiveMessage(async (m) => {
     try {
+      if (m.moopi === 'ready') return;
       if (m.moopi === 'openClaude') await openClaude();
       else if (m.moopi === 'signedIn' && m.token) {
         if (m.token !== api.token) { api.token = m.token; await context.secrets.store('moopi.token', m.token); try { api.me = await api.get('/auth/me'); } catch (e) {} api.emit(); }
@@ -268,6 +276,7 @@ function activate(context) {
   );
   process.on('unhandledRejection', (e) => reportError(context, api, 'unhandledRejection', e));
   context.subscriptions.push(vscode.commands.registerCommand('moopi.openApp', () => openApp(context, api)));
+  context.subscriptions.push(vscode.commands.registerCommand('moopi.reloadApp', () => { if (appPanel) appPanel.webview.postMessage({ reload: true }); else openApp(context, api); }));
   api.load().then(() => showStatus());
   (async () => {
     await applyLayout(context);

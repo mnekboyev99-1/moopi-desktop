@@ -29,7 +29,8 @@
       { "command": "moopi.refresh", "title": "MOOPI: Yangilash", "icon": "$(refresh)" },
       { "command": "moopi.openClaude", "title": "MOOPI: Claude bilan suhbat", "icon": "$(sparkle)" },
       { "command": "moopi.sendLogs", "title": "MOOPI: Xatoni yuborish (jurnal)", "icon": "$(bug)" },
-      { "command": "moopi.openApp", "title": "MOOPI: Ilovani ochish" }
+      { "command": "moopi.openApp", "title": "MOOPI: Ilovani ochish" },
+      { "command": "moopi.reloadApp", "title": "MOOPI: Ilovani qayta yuklash" }
     ],
     "menus": {
       "view/title": [
