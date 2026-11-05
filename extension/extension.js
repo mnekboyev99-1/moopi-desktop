@@ -29,6 +29,24 @@ const T = {
         file_ready: '\u0424\u0430\u0439\u043b \u0433\u043e\u0442\u043e\u0432 \u0434\u043b\u044f Claude: {m} \u2014 \u0432\u0441\u0442\u0430\u0432\u044c\u0442\u0435 \u0432 \u043f\u043e\u043b\u0435 \u0432\u0432\u043e\u0434\u0430 (Cmd+V / Ctrl+V).', go_claude: '\u041f\u0435\u0440\u0435\u0439\u0442\u0438 \u043a Claude', file_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0444\u0430\u0439\u043b', approvals_waiting: '{n} \u0437\u0430\u043f\u0440\u043e\u0441\u043e\u0432 \u0436\u0434\u0443\u0442 \u043e\u0434\u043e\u0431\u0440\u0435\u043d\u0438\u044f', open_approvals: '\u041e\u0442\u043a\u0440\u044b\u0442\u044c \u043e\u0434\u043e\u0431\u0440\u0435\u043d\u0438\u044f',
         send_logs: '\u041e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u043e\u0442\u0447\u0451\u0442 \u043e\u0431 \u043e\u0448\u0438\u0431\u043a\u0435', logs_sent: '\u0416\u0443\u0440\u043d\u0430\u043b \u043e\u0442\u043f\u0440\u0430\u0432\u043b\u0435\u043d \u0432 MOOPI, \u0441\u043f\u0430\u0441\u0438\u0431\u043e.', logs_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u0436\u0443\u0440\u043d\u0430\u043b', installing_claude: '\u0423\u0441\u0442\u0430\u043d\u043e\u0432\u043a\u0430 Claude Code\u2026', claude_installed: 'Claude Code \u0443\u0441\u0442\u0430\u043d\u043e\u0432\u043b\u0435\u043d.' },
 };
+Object.assign(T.uz, {
+  dictate_copied: "Matn nusxalandi \u2014 Claude maydoniga Ctrl+V bilan qo\u2018ying.", dictate_failed: 'Ovozni matnga aylantirib bo\u2018lmadi',
+  dictate_unsupported: 'Gapirib yozish bu tizimda hozircha yo\u2018q', dictate_recording: 'Yozilmoqda\u2026 to\u2018xtatish uchun yana bosing',
+  update_ready: 'MOOPI yangilandi ({v}). Qayta yuklash?', updating: 'Yangilanmoqda: {v}\u2026', updated: 'Yangilandi: {v} \u2014 qayta yuklang',
+  reload: 'Qayta yuklash', later: 'Keyinroq', up_to_date: 'MOOPI yangi ({v}).', update_failed: 'Yangilab bo\u2018lmadi',
+  signed_in_google: 'Kirdingiz.', signin_failed: 'Kirib bo\u2018lmadi: {e}', launch_on: 'Kompyuter bilan ochilish yoqildi',
+  launch_off: 'Kompyuter bilan ochilish o\u2018chirildi', hotkey_set: 'Tezkor tugma: {k}', hotkey_cleared: 'Tezkor tugma olib tashlandi',
+  hotkey_bad: 'Tezkor tugma Ctrl+Alt+M ko\u2018rinishida bo\u2018lsin', workspace_opening: 'MOOPI ish papkasi ochilmoqda\u2026',
+});
+Object.assign(T.ru, {
+  dictate_copied: '\u0422\u0435\u043a\u0441\u0442 \u0441\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u043d \u2014 \u0432\u0441\u0442\u0430\u0432\u044c\u0442\u0435 \u0432 \u043f\u043e\u043b\u0435 Claude (Ctrl+V).', dictate_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043f\u0440\u0435\u0432\u0440\u0430\u0442\u0438\u0442\u044c \u0440\u0435\u0447\u044c \u0432 \u0442\u0435\u043a\u0441\u0442',
+  dictate_unsupported: '\u041d\u0430\u0434\u0438\u043a\u0442\u043e\u0432\u043a\u0430 \u0432 \u044d\u0442\u043e\u0439 \u0441\u0438\u0441\u0442\u0435\u043c\u0435 \u043f\u043e\u043a\u0430 \u043d\u0435\u0434\u043e\u0441\u0442\u0443\u043f\u043d\u0430', dictate_recording: '\u0417\u0430\u043f\u0438\u0441\u044c\u2026 \u043d\u0430\u0436\u043c\u0438\u0442\u0435 \u0435\u0449\u0451 \u0440\u0430\u0437, \u0447\u0442\u043e\u0431\u044b \u043e\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u044c',
+  update_ready: 'MOOPI \u043e\u0431\u043d\u043e\u0432\u043b\u0451\u043d ({v}). \u041f\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c?', updating: '\u041e\u0431\u043d\u043e\u0432\u043b\u0435\u043d\u0438\u0435: {v}\u2026', updated: '\u041e\u0431\u043d\u043e\u0432\u043b\u0435\u043d\u043e: {v} \u2014 \u043f\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u0435',
+  reload: '\u041f\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c', later: '\u041f\u043e\u0437\u0436\u0435', up_to_date: 'MOOPI \u0430\u043a\u0442\u0443\u0430\u043b\u0435\u043d ({v}).', update_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0431\u043d\u043e\u0432\u0438\u0442\u044c',
+  signed_in_google: '\u0412\u044b \u0432\u043e\u0448\u043b\u0438.', signin_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0432\u043e\u0439\u0442\u0438: {e}', launch_on: '\u0417\u0430\u043f\u0443\u0441\u043a \u0441 \u043a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440\u043e\u043c \u0432\u043a\u043b\u044e\u0447\u0451\u043d',
+  launch_off: '\u0417\u0430\u043f\u0443\u0441\u043a \u0441 \u043a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440\u043e\u043c \u0432\u044b\u043a\u043b\u044e\u0447\u0435\u043d', hotkey_set: '\u0413\u043e\u0440\u044f\u0447\u0430\u044f \u043a\u043b\u0430\u0432\u0438\u0448\u0430: {k}', hotkey_cleared: '\u0413\u043e\u0440\u044f\u0447\u0430\u044f \u043a\u043b\u0430\u0432\u0438\u0448\u0430 \u0443\u0431\u0440\u0430\u043d\u0430',
+  hotkey_bad: '\u0413\u043e\u0440\u044f\u0447\u0430\u044f \u043a\u043b\u0430\u0432\u0438\u0448\u0430 \u0432 \u0432\u0438\u0434\u0435 Ctrl+Alt+M', workspace_opening: '\u041e\u0442\u043a\u0440\u044b\u0432\u0430\u044e \u0440\u0430\u0431\u043e\u0447\u0443\u044e \u043f\u0430\u043f\u043a\u0443 MOOPI\u2026',
+});
 function lang() { return vscode.workspace.getConfiguration('moopi').get('language', 'uz') === 'ru' ? 'ru' : 'uz'; }
 function t(key) { return (T[lang()] && T[lang()][key]) || T.uz[key] || key; }
 
@@ -144,16 +162,28 @@ const frame = document.getElementById('app'), home = ${JSON.stringify(url + '?de
 let watchdog = null;
 frame.addEventListener('load', () => { clearTimeout(watchdog); watchdog = setTimeout(() => { frame.src = home; }, 8000); });
 window.addEventListener('message', (e) => {
-  if (e.origin !== ${JSON.stringify(origin)} || !e.data || typeof e.data !== 'object') return;
-  if (e.data.reload) { frame.src = home; return; }
-  if (e.data.moopi) { clearTimeout(watchdog); vscode.postMessage(e.data); }
+  const d = e.data;
+  if (!d || typeof d !== 'object') return;
+  if (e.source !== frame.contentWindow) { // from MOOPI Desktop itself: for the frame
+    if (d.reload) { frame.src = home; return; }
+    if (d.goto) { frame.contentWindow.postMessage({ fromMoopiDesktop: true, moopi: 'goto', tab: d.goto }, ${JSON.stringify(origin)}); return; }
+    if (d.fromMoopiDesktop) frame.contentWindow.postMessage(d, ${JSON.stringify(origin)});
+    return;
+  }
+  if (e.origin !== ${JSON.stringify(origin)}) return;
+  if (d.reload) { frame.src = home; return; }
+  if (d.moopi) { clearTimeout(watchdog); vscode.postMessage(d); }
 });
 </script></body></html>`;
   appPanel.webview.onDidReceiveMessage(async (m) => {
     try {
-      if (m.moopi === 'ready') { setTimeout(() => openClaude().catch(() => {}), 1500); return; }
-      if (m.moopi === 'openClaude') await openClaude();
+      if (m.moopi === 'ready') { sendState(context, api); setTimeout(() => openClaude().catch(() => {}), 1500); return; }
+      if (m.moopi === 'getState') sendState(context, api);
+      else if (m.moopi === 'openClaude') await openClaude();
       else if (m.moopi === 'giveFile') await giveFile(context, api, m.id, m.name);
+      else if (m.moopi === 'open' && typeof m.url === 'string' && /^https:\/\//.test(m.url)) await vscode.env.openExternal(vscode.Uri.parse(m.url));
+      else if (m.moopi === 'googleSignIn') await vscode.env.openExternal(vscode.Uri.parse(api.base + '/auth/google/start?desktop=true'));
+      else if (m.moopi === 'desktop') await desktopAction(context, api, String(m.action || ''), m.value);
       else if (m.moopi === 'signedIn' && m.token) {
         if (m.token !== api.token) { api.token = m.token; await context.secrets.store('moopi.token', m.token); try { api.me = await api.get('/auth/me'); } catch (e) {} api.emit(); }
       } else if (m.moopi === 'signedOut') { await api.signOut(); }
@@ -334,6 +364,7 @@ function playFile(file) {
 }
 function setVoice(context, on) {
   voice.on = on; context.globalState.update('moopi.voice', on);
+  if (voice.api) sendState(context, voice.api);
   if (!on && voice.player) { try { voice.player.kill(); } catch (e) {} }
   vscode.window.setStatusBarMessage(t(on ? 'voice_on' : 'voice_off'), 4000);
   vscode.window.showInformationMessage(t(on ? 'voice_on' : 'voice_off'));
@@ -458,9 +489,11 @@ async function sendLogs(context, api, reason, quiet) {
   }
 }
 /** The extension's own errors go to MOOPI by themselves, at most 3 reports an hour. */
+let errorPingAt = 0;
 function reportError(context, api, where, e) {
   noteError(where, e);
   const now = Date.now();
+  if (now - errorPingAt > 60000) { errorPingAt = now; ping(context, api, `${where}: ${String((e && e.message) || e).slice(0, 300)}`).catch(() => {}); }
   if (now - logsSentAt > 3600 * 1000) { logsSentAt = now; logsSendCount = 0; }
   if (logsSendCount >= 3) return;
   logsSendCount += 1;
@@ -490,6 +523,257 @@ async function openClaude() {
   }
 }
 
+/** The work folder, ~/MOOPI: MOOPI's persona for Claude Code (CLAUDE.md, refreshed every start in the
+ *  person's language), the MOOPI MCP server (.mcp.json) and Claude's settings (once; the person's own
+ *  edits stay). A fresh installation has no folder open: MOOPI's is opened, and the window reloads with it. */
+const WORKSPACE_DIR = path.join(require('os').homedir(), 'MOOPI');
+function writeIfChanged(file, text) {
+  let old = null; try { old = fs.readFileSync(file, 'utf8'); } catch (e) {}
+  if (old !== text) fs.writeFileSync(file, text);
+}
+async function prepareWorkspace(context, api) {
+  const bundled = (name) => fs.readFileSync(path.join(context.extensionUri.fsPath, 'workspace', name), 'utf8');
+  try {
+    fs.mkdirSync(path.join(WORKSPACE_DIR, '.claude'), { recursive: true });
+    for (const sub of SYNC_FOLDERS) fs.mkdirSync(path.join(WORKSPACE_DIR, sub), { recursive: true });
+    const code = (api.me && api.me.language) || lang();
+    const tz = (api.me && api.me.timezone) || Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Tashkent';
+    writeIfChanged(path.join(WORKSPACE_DIR, 'CLAUDE.md'),
+      bundled('CLAUDE.md').replace(/\{language\}/g, code === 'ru' ? 'rus tili' : "o'zbek tili (lotin)").replace(/\{timezone\}/g, tz));
+    if (!fs.existsSync(path.join(WORKSPACE_DIR, '.mcp.json'))) fs.writeFileSync(path.join(WORKSPACE_DIR, '.mcp.json'), bundled('mcp.json'));
+    const settingsPath = path.join(WORKSPACE_DIR, '.claude', 'settings.json');
+    let own = {}; try { own = JSON.parse(fs.readFileSync(settingsPath, 'utf8')); } catch (e) {}
+    const wanted = JSON.parse(bundled('settings.json'));
+    const merged = { ...wanted, ...own, language: code === 'ru' ? 'russian' : 'uzbek', enableAllProjectMcpServers: true };
+    writeIfChanged(settingsPath, JSON.stringify(merged, null, 2) + '\n');
+  } catch (e) { noteError('prepareWorkspace', e); }
+  const folder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
+  if (folder) return true;
+  vscode.window.setStatusBarMessage(t('workspace_opening'), 5000);
+  await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(WORKSPACE_DIR), { forceNewWindow: false });
+  return false; // the window reloads with the folder; activate() runs again
+}
+
+/** What the app's Desktop section shows, sent after every change. */
+let updating = '';
+function claudeVersion() {
+  const ext = vscode.extensions.getExtension('Anthropic.claude-code') || vscode.extensions.getExtension('anthropic.claude-code');
+  return ext ? String((ext.packageJSON && ext.packageJSON.version) || '') : '';
+}
+function pushToApp(msg) { if (appPanel) appPanel.webview.postMessage({ fromMoopiDesktop: true, ...msg }); }
+function sendState(context, api) {
+  pushToApp({ moopi: 'state', platform: process.platform, arch: process.arch, appVersion: vscode.version,
+    extVersion: context.extension.packageJSON.version, claudeVersion: claudeVersion(), voice: !!voice.on,
+    launchAtLogin: !!context.globalState.get('moopi.launchAtLogin'), hotkey: String(context.globalState.get('moopi.hotkey') || ''),
+    dictation: process.platform === 'win32' ? dictation.state : 'unsupported', lastDictation: dictation.last, updating });
+}
+async function desktopAction(context, api, action, value) {
+  if (action === 'voice') setVoice(context, !!value);
+  else if (action === 'dictate') await toggleDictation(context, api);
+  else if (action === 'launchAtLogin') {
+    await context.globalState.update('moopi.launchAtLogin', !!value);
+    await applyStartup(context, api);
+    vscode.window.showInformationMessage(t(value ? 'launch_on' : 'launch_off'));
+  } else if (action === 'hotkey') {
+    const k = String(value || '').trim();
+    if (k && !/^((ctrl|alt|shift)\+){1,3}[a-z0-9]$/i.test(k)) vscode.window.showWarningMessage(t('hotkey_bad'));
+    else {
+      await context.globalState.update('moopi.hotkey', k);
+      await applyStartup(context, api);
+      vscode.window.showInformationMessage(k ? t('hotkey_set').replace('{k}', k) : t('hotkey_cleared'));
+    }
+  } else if (action === 'sendLogs') await sendLogs(context, api, 'user', false);
+  sendState(context, api);
+}
+
+/** moopi://moopi.moopi-desktop/signin?code=… — the system browser hands the session over after Google
+ *  (the server's one-time code, traded for a token here); ?error=… says why it did not. */
+function registerUri(context, api) {
+  context.subscriptions.push(vscode.window.registerUriHandler({
+    handleUri: async (uri) => {
+      try {
+        const params = new URLSearchParams(uri.query);
+        if (uri.path !== '/signin') return;
+        if (params.get('error')) { vscode.window.showWarningMessage(t('signin_failed').replace('{e}', params.get('error'))); return; }
+        const code = params.get('code'); if (!code) return;
+        const r = await api.post('/auth/desktop/exchange', { code });
+        const token = r && r.token; if (!token) throw new Error('no token');
+        api.token = token; await context.secrets.store('moopi.token', token);
+        try { api.me = await api.get('/auth/me'); } catch (e) {}
+        api.emit();
+        pushToApp({ moopi: 'token', token });
+        if (appPanel) appPanel.reveal(vscode.ViewColumn.One, false);
+        vscode.window.showInformationMessage(t('signed_in_google'));
+      } catch (e) {
+        reportError(context, api, 'uri', e);
+        vscode.window.showWarningMessage(t('signin_failed').replace('{e}', String((e && e.message) || e)));
+      }
+    },
+  }));
+}
+
+/** The extension updates itself from GitHub releases (moopi.moopi-desktop-<version>.vsix): a newer release
+ *  is installed over the built-in copy and the window offers a reload — fixes reach people in minutes, no
+ *  new Desktop build. Checked 20 s after start and every 6 hours; "MOOPI: Yangilanishni tekshirish" at will. */
+function compareVersions(a, b) {
+  const pa = String(a).split('.').map(Number), pb = String(b).split('.').map(Number);
+  for (let i = 0; i < 3; i++) if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) - (pb[i] || 0);
+  return 0;
+}
+async function checkUpdate(context, api, manual) {
+  const conf = vscode.workspace.getConfiguration('moopi');
+  if (!manual && !conf.get('autoUpdate', true)) return;
+  const current = context.extension.packageJSON.version;
+  const repo = conf.get('updateRepo', 'mnekboyev99-1/moopi-desktop');
+  try {
+    const r = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, { headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'moopi-desktop' } });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const rel = await r.json();
+    const tag = String(rel.tag_name || '').replace(/^v/, '');
+    if (!/^\d+\.\d+\.\d+$/.test(tag)) throw new Error('tag ' + rel.tag_name);
+    if (compareVersions(tag, current) <= 0) { if (manual) vscode.window.showInformationMessage(t('up_to_date').replace('{v}', current)); return; }
+    const asset = (rel.assets || []).find((a) => a.name === `moopi.moopi-desktop-${tag}.vsix`);
+    if (!asset) throw new Error('no vsix for ' + tag);
+    updating = t('updating').replace('{v}', tag); sendState(context, api);
+    const file = path.join(require('os').tmpdir(), `moopi.moopi-desktop-${tag}.vsix`);
+    const dl = await fetch(asset.browser_download_url, { headers: { 'User-Agent': 'moopi-desktop' } });
+    if (!dl.ok) throw new Error('HTTP ' + dl.status);
+    fs.writeFileSync(file, Buffer.from(await dl.arrayBuffer()));
+    await vscode.commands.executeCommand('workbench.extensions.installExtension', vscode.Uri.file(file));
+    try { fs.unlinkSync(file); } catch (e) {}
+    updating = t('updated').replace('{v}', tag); sendState(context, api);
+    const pick = await vscode.window.showInformationMessage(t('update_ready').replace('{v}', tag), t('reload'), t('later'));
+    if (pick === t('reload')) await vscode.commands.executeCommand('workbench.action.reloadWindow');
+  } catch (e) {
+    updating = ''; sendState(context, api); noteError('checkUpdate', e);
+    if (manual) vscode.window.showWarningMessage(t('update_failed') + ': ' + ((e && e.message) || e));
+  }
+}
+
+/** "Gapirib yozish": Windows records the microphone through the system's own MCI (PowerShell, no extra
+ *  programs), MOOPI's speech-to-text (ElevenLabs, Uzbek and Russian) turns it into text, the text goes to the
+ *  clipboard and Claude's input is focused — one Ctrl+V. (Claude Code's own dictation has no Uzbek.) Tap to
+ *  start, tap again to stop; two minutes at most. Other systems: not yet. */
+const dictation = { state: 'idle', proc: null, stopFile: null, outFile: null, last: '', timer: null };
+const RECORD_PS = `param([string]$Out, [string]$Stop)
+$code = @"
+using System; using System.Text; using System.Runtime.InteropServices;
+public class Mci { [DllImport("winmm.dll", CharSet=CharSet.Unicode)] public static extern int mciSendString(string cmd, StringBuilder ret, int len, IntPtr h); }
+"@
+Add-Type -TypeDefinition $code
+$sb = New-Object System.Text.StringBuilder 256
+[Mci]::mciSendString('open new type waveaudio alias rec', $sb, 256, [IntPtr]::Zero) | Out-Null
+[Mci]::mciSendString('set rec time format ms bitspersample 16 channels 1 samplespersec 16000 bytespersec 32000 alignment 2', $sb, 256, [IntPtr]::Zero) | Out-Null
+$r = [Mci]::mciSendString('record rec', $sb, 256, [IntPtr]::Zero)
+if ($r -ne 0) { [Console]::Error.WriteLine("record failed: $r"); exit 1 }
+$started = Get-Date
+while (-not (Test-Path $Stop)) { Start-Sleep -Milliseconds 200; if (((Get-Date) - $started).TotalSeconds -gt 125) { break } }
+[Mci]::mciSendString('stop rec', $sb, 256, [IntPtr]::Zero) | Out-Null
+[Mci]::mciSendString("save rec \`"$Out\`"", $sb, 256, [IntPtr]::Zero) | Out-Null
+[Mci]::mciSendString('close rec', $sb, 256, [IntPtr]::Zero) | Out-Null
+`;
+async function toggleDictation(context, api) {
+  if (process.platform !== 'win32') { vscode.window.showInformationMessage(t('dictate_unsupported')); return; }
+  if (!api.token) { vscode.window.showWarningMessage(t('signin')); return; }
+  if (dictation.state === 'recording') { try { fs.writeFileSync(dictation.stopFile, 'stop'); } catch (e) {} return; }
+  if (dictation.state !== 'idle') return;
+  const tmp = require('os').tmpdir(), stamp = Date.now();
+  dictation.outFile = path.join(tmp, `moopi-dictate-${stamp}.wav`);
+  dictation.stopFile = path.join(tmp, `moopi-dictate-${stamp}.stop`);
+  const script = path.join(tmp, `moopi-record-${stamp}.ps1`);
+  fs.writeFileSync(script, RECORD_PS);
+  dictation.state = 'recording'; sendState(context, api);
+  vscode.window.setStatusBarMessage(t('dictate_recording'), 8000);
+  const cp = require('child_process');
+  let err = '';
+  dictation.proc = cp.spawn('powershell', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', script, '-Out', dictation.outFile, '-Stop', dictation.stopFile], { windowsHide: true });
+  dictation.proc.stderr.on('data', (d) => { err += d; });
+  dictation.timer = setTimeout(() => { try { fs.writeFileSync(dictation.stopFile, 'stop'); } catch (e) {} }, 120000);
+  dictation.proc.on('error', (e) => { err += String(e); });
+  dictation.proc.on('exit', async () => {
+    clearTimeout(dictation.timer); dictation.proc = null;
+    dictation.state = 'working'; sendState(context, api);
+    try {
+      let size = 0; try { size = fs.statSync(dictation.outFile).size; } catch (e) {}
+      if (size < 4000) throw new Error('no audio ' + err.slice(0, 200));
+      const form = new FormData();
+      form.append('file', new Blob([fs.readFileSync(dictation.outFile)], { type: 'audio/wav' }), 'dictate.wav');
+      const r = await fetch(`${api.base}/voice/transcribe`, { method: 'POST', headers: { Authorization: 'Bearer ' + api.token }, body: form });
+      if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + (await r.text()).slice(0, 160));
+      const text = String(((await r.json()) || {}).text || '').trim();
+      if (!text) throw new Error('empty transcript');
+      dictation.last = text.slice(0, 300);
+      await vscode.env.clipboard.writeText(text);
+      await openClaude();
+      try { await vscode.commands.executeCommand('claude-vscode.focus'); } catch (e) {}
+      vscode.window.showInformationMessage(t('dictate_copied'));
+    } catch (e) {
+      reportError(context, api, 'dictate', e);
+      vscode.window.showWarningMessage(t('dictate_failed') + ': ' + ((e && e.message) || e));
+    } finally {
+      for (const f of [dictation.outFile, dictation.stopFile, script]) { try { fs.unlinkSync(f); } catch (e) {} }
+      dictation.state = 'idle'; sendState(context, api);
+    }
+  });
+}
+
+/** Start with the computer: a shortcut in Windows' Startup folder (its hotkey opens MOOPI Desktop from
+ *  anywhere — a Windows shortcut feature; without start-up the shortcut sits in the Start menu instead), a
+ *  LaunchAgent on the Mac. */
+function psQuote(v) { return "'" + String(v).replace(/'/g, "''") + "'"; }
+function execPowershell(script) {
+  return new Promise((resolve, reject) => {
+    require('child_process').execFile('powershell', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', script],
+      { windowsHide: true }, (e, out, errText) => e ? reject(new Error(String(errText || e.message).slice(0, 300))) : resolve(out));
+  });
+}
+async function applyStartup(context, api) {
+  const on = !!context.globalState.get('moopi.launchAtLogin');
+  const hotkey = String(context.globalState.get('moopi.hotkey') || '');
+  try {
+    if (process.platform === 'win32') {
+      const menu = path.join(process.env.APPDATA || '', 'Microsoft', 'Windows', 'Start Menu', 'Programs');
+      const startup = path.join(menu, 'Startup', 'MOOPI Desktop.lnk'), programs = path.join(menu, 'MOOPI Desktop (tezkor).lnk');
+      const target = on ? startup : (hotkey ? programs : '');
+      await execPowershell(`$w = New-Object -ComObject WScript.Shell
+foreach ($p in @(${psQuote(startup)}, ${psQuote(programs)})) { if (Test-Path $p) { Remove-Item $p -Force } }
+if (${psQuote(target)} -ne '') { $s = $w.CreateShortcut(${psQuote(target)}); $s.TargetPath = ${psQuote(process.execPath)}; $s.WorkingDirectory = ${psQuote(path.dirname(process.execPath))}; if (${psQuote(hotkey)} -ne '') { $s.Hotkey = ${psQuote(hotkey)} }; $s.Save() }`);
+    } else if (process.platform === 'darwin') {
+      const plist = path.join(require('os').homedir(), 'Library', 'LaunchAgents', 'uz.moopi.desktop.plist');
+      const cp = require('child_process');
+      if (!on) { try { cp.execFileSync('launchctl', ['unload', plist]); } catch (e) {} try { fs.unlinkSync(plist); } catch (e) {} return; }
+      const i = process.execPath.indexOf('.app/'); if (i < 0) return;
+      const app = process.execPath.slice(0, i + 4);
+      fs.mkdirSync(path.dirname(plist), { recursive: true });
+      fs.writeFileSync(plist, `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict><key>Label</key><string>uz.moopi.desktop</string>
+<key>ProgramArguments</key><array><string>/usr/bin/open</string><string>-a</string><string>${app}</string></array>
+<key>RunAtLoad</key><true/></dict></plist>
+`);
+      try { cp.execFileSync('launchctl', ['load', plist]); } catch (e) {}
+    }
+  } catch (e) { reportError(context, api, 'startup', e); }
+}
+
+/** This installation reports itself to MOOPI (which versions, where; an error when one happens): the owner's
+ *  Platforma page. At most once in 10 minutes without an error. */
+let pingedAt = 0;
+function clientId(context) {
+  let id = context.globalState.get('moopi.clientId');
+  if (!id) { id = require('crypto').randomBytes(12).toString('hex'); context.globalState.update('moopi.clientId', id); }
+  return id;
+}
+async function ping(context, api, error) {
+  if (!api.token) return;
+  if (!error && Date.now() - pingedAt < 600000) return;
+  pingedAt = Date.now();
+  try {
+    await api.post('/desktop/ping', { client_id: clientId(context), platform: process.platform, arch: process.arch, app_version: vscode.version,
+      extension_version: context.extension.packageJSON.version, claude_version: claudeVersion(), error: error ? String(error).slice(0, 2000) : null });
+  } catch (e) { noteError('ping', e); }
+}
+
 function activate(context) {
   const api = new Api(context);
   panels = ['bugun', 'tasdiqlar', 'fayllar'].map((id) => new Panel(id, api, context));
@@ -506,8 +790,12 @@ function activate(context) {
     vscode.commands.registerCommand('moopi.openClaude', () => openClaude()),
     vscode.commands.registerCommand('moopi.sendLogs', () => sendLogs(context, api, 'user', false)),
     vscode.commands.registerCommand('moopi.voiceToggle', () => setVoice(context, !voice.on)),
+    vscode.commands.registerCommand('moopi.dictate', () => toggleDictation(context, api)),
+    vscode.commands.registerCommand('moopi.checkUpdate', () => checkUpdate(context, api, true)),
   );
+  registerUri(context, api);
   voice.on = !!context.globalState.get('moopi.voice');
+  voice.api = api;
   startVoiceWatch(context, api);
   // Once, after the first sign-in: the three things to know, and whether answers should be read aloud.
   context.subscriptions.push(api.onChange(async () => {
@@ -520,11 +808,17 @@ function activate(context) {
   process.on('unhandledRejection', (e) => reportError(context, api, 'unhandledRejection', e));
   context.subscriptions.push(vscode.commands.registerCommand('moopi.openApp', () => openApp(context, api)));
   context.subscriptions.push(vscode.commands.registerCommand('moopi.reloadApp', () => { if (appPanel) appPanel.webview.postMessage({ reload: true }); else openApp(context, api); }));
-  api.load().then(() => showStatus());
   (async () => {
+    await api.load(); showStatus();
     await applyLayout(context);
+    if (!(await prepareWorkspace(context, api))) return; // the window reloads with ~/MOOPI open
     try { await vscode.commands.executeCommand('workbench.action.closeSidebar'); } catch (e) {}
     openApp(context, api);
+    ping(context, api).catch(() => {});
+    context.subscriptions.push(api.onChange(() => { if (api.token) { pingedAt = 0; ping(context, api).catch(() => {}); } }));
+    setTimeout(() => checkUpdate(context, api, false), 20000);
+    const updates = setInterval(() => checkUpdate(context, api, false), 6 * 3600 * 1000);
+    context.subscriptions.push({ dispose: () => clearInterval(updates) });
     try { await vscode.commands.executeCommand('workbench.action.lockEditorGroup'); } catch (e) {}
     setTimeout(async () => { if (await ensureClaude(context)) { await openClaude(); appPanel && appPanel.reveal(vscode.ViewColumn.One, true); } }, 2500);
   })();

@@ -2,7 +2,7 @@
   "name": "moopi-desktop",
   "displayName": "MOOPI",
   "description": "MOOPI panellari: Bugun, Tasdiqlar, Fayllar — Claude Code bilan bir oynada.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "moopi",
   "license": "UNLICENSED",
   "repository": {
@@ -16,7 +16,8 @@
     "Other"
   ],
   "activationEvents": [
-    "onStartupFinished"
+    "onStartupFinished",
+    "onUri"
   ],
   "main": "./extension.js",
   "contributes": {
@@ -83,6 +84,14 @@
       {
         "command": "moopi.voiceToggle",
         "title": "MOOPI: Ovozli javob (yoqish/o'chirish)"
+      },
+      {
+        "command": "moopi.dictate",
+        "title": "MOOPI: Gapirib yozish"
+      },
+      {
+        "command": "moopi.checkUpdate",
+        "title": "MOOPI: Yangilanishni tekshirish"
       }
     ],
     "menus": {
@@ -125,6 +134,16 @@
           ],
           "default": "uz",
           "description": "Panellar tili."
+        },
+        "moopi.autoUpdate": {
+          "type": "boolean",
+          "default": true,
+          "description": "MOOPI kengaytmasi GitHub'dagi yangi nashrni o'zi o'rnatadi."
+        },
+        "moopi.updateRepo": {
+          "type": "string",
+          "default": "mnekboyev99-1/moopi-desktop",
+          "description": "Yangilanishlar olinadigan GitHub ombori."
         }
       }
     },
@@ -140,6 +159,11 @@
         "command": "moopi.voiceToggle",
         "key": "ctrl+alt+v",
         "mac": "cmd+alt+v"
+      },
+      {
+        "command": "moopi.dictate",
+        "key": "ctrl+alt+m",
+        "mac": "cmd+alt+m"
       }
     ]
   }
