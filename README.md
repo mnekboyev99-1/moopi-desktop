@@ -1,3 +1,11 @@
+<div align="center">
+  <h1>MOOPI Desktop — kengaytma</h1>
+  <p><b>Biznes egasining shaxsiy AI yordamchisi, kompyuterda.</b> · <a href="https://moopi.uz">moopi.uz</a> · <a href="https://t.me/moopiai">@moopiai</a></p>
+  <p>Asoschi va muallif — <b>Muxiddin Nekbayev</b> (Toshkent, O'zbekiston)</p>
+</div>
+
+---
+
 # MOOPI Desktop
 
 Kompyuter uchun MOOPI: VSCodium (VS Code'ning ochiq kodli, telemetriyasiz yig'ilmasi) ustida MOOPI qobig'i.
@@ -29,3 +37,10 @@ to'lamaymiz; "Claude Code bilan ishlaydi" deb yozish mumkin, Claude nomi va logo
 qayta imzolangan nusxa Launch Services orqali ishga tushmaydi ("Launchd job spawn failed", imzo tekshiruvdan
 o'tsa ham). Shuning uchun A bosqichida asl `VSCodium.app` ishlatiladi (menyuda "VSCodium" nomi qoladi),
 nom va belgi B bosqichida manbadan yig'ilgan brendlangan yig'ilma bilan keladi.
+
+## Asoschi / Основатель
+
+**Muxiddin Nekbayev** — MOOPI'ning asoschisi va muallifi. [GitHub](https://github.com/mnekboyev99-1) · [moopi.uz](https://moopi.uz)
+
+© 2026 MOOPI · Muxiddin Nekbayev. Bu kengaytma MOOPI'ning bir qismi; ilovaning aqli, xotirasi va
+integratsiyalari MOOPI serverida ishlaydi. Claude va Claude Code — Anthropic'ning belgilari.
