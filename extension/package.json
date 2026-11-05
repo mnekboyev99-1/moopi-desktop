@@ -5,6 +5,7 @@
   "version": "0.1.0",
   "publisher": "moopi",
   "license": "UNLICENSED",
+  "repository": { "type": "git", "url": "https://github.com/mnekboyev99-1/moopi-desktop" },
   "engines": { "vscode": "^1.94.0" },
   "categories": ["Other"],
   "activationEvents": ["onStartupFinished"],
@@ -26,12 +27,14 @@
       { "command": "moopi.signIn", "title": "MOOPI: Kirish" },
       { "command": "moopi.signOut", "title": "MOOPI: Chiqish" },
       { "command": "moopi.refresh", "title": "MOOPI: Yangilash", "icon": "$(refresh)" },
-      { "command": "moopi.openClaude", "title": "MOOPI: Claude bilan suhbat", "icon": "$(sparkle)" }
+      { "command": "moopi.openClaude", "title": "MOOPI: Claude bilan suhbat", "icon": "$(sparkle)" },
+      { "command": "moopi.sendLogs", "title": "MOOPI: Xatoni yuborish (jurnal)", "icon": "$(bug)" }
     ],
     "menus": {
       "view/title": [
         { "command": "moopi.refresh", "when": "view =~ /^moopi\\./", "group": "navigation" },
-        { "command": "moopi.openClaude", "when": "view == moopi.bugun", "group": "navigation" }
+        { "command": "moopi.openClaude", "when": "view == moopi.bugun", "group": "navigation" },
+        { "command": "moopi.sendLogs", "when": "view == moopi.bugun", "group": "navigation" }
       ]
     },
     "configuration": {

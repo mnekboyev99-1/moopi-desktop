@@ -31,9 +31,10 @@
     if (!d.tasks || !d.tasks.length) html += `<div class="empty">${esc(T.empty)}</div>`;
     for (const x of d.tasks || []) html += `<div class="item"><span class="dot ${x.overdue ? 'late' : ''}" style="margin-top:6px"></span><span class="grow">${esc(x.title)}${x.overdue ? ` <span class="hint">· ${esc(T.overdue)}</span>` : ''}</span><span class="when">${when(x.due_at || x.remind_at)}</span></div>`;
     if (d.recent && d.recent.length) { html += `<h3>${esc(T.recent)}</h3>`; for (const c of d.recent.slice(0, 5)) html += `<div class="item"><span class="grow">${esc(c.title || '')}</span><span class="when">${when(c.updated_at)}</span></div>`; }
-    html += `<div style="margin-top:12px"><button id="claude">${esc(T.claude)}</button></div>`;
+    html += `<div class="row" style="margin-top:12px"><button id="claude">${esc(T.claude)}</button><span class="grow"></span><button class="link" id="logs">${esc(T.send_logs)}</button></div>`;
     root.innerHTML = html;
     root.querySelector('#claude').addEventListener('click', () => post({ kind: 'openClaude' }));
+    root.querySelector('#logs').addEventListener('click', () => post({ kind: 'sendLogs' }));
   }
 
   function tasdiqlar(list) {

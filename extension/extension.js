@@ -11,13 +11,15 @@ const T = {
         code_sent: 'Kod yuborildi. Kelmasa, Spam papkasini tekshiring.', failed: 'Kirib bo‘lmadi', empty: 'Hozircha bo‘sh',
         approve: 'Tasdiqlash', reject: 'Rad etish', open: 'Ochish', overdue: 'muddati o‘tgan', today_tasks: 'Bugungi ishlar',
         briefing: 'Ertalabki brifing', recent: 'Oxirgi suhbatlar', loading: 'Yuklanmoqda…', signed_out: 'Chiqdingiz', hello: 'Salom',
-        claude: 'Claude bilan suhbat', no_claude: 'Claude Code kengaytmasi topilmadi.', signin_elsewhere: 'Kirish \u2014 "Bugun" panelida.' },
+        claude: 'Claude bilan suhbat', no_claude: 'Claude Code kengaytmasi topilmadi.', signin_elsewhere: 'Kirish \u2014 "Bugun" panelida.',
+        send_logs: 'Xatoni yuborish', logs_sent: 'Jurnal MOOPI\u2019ga yuborildi, rahmat.', logs_failed: 'Jurnalni yuborib bo\u2018lmadi', installing_claude: 'Claude Code o\u2018rnatilmoqda\u2026', claude_installed: 'Claude Code o\u2018rnatildi.' },
   ru: { signin: 'Войдите в аккаунт MOOPI', email: 'Email', code: '6-значный код', send_code: 'Отправить код', enter: 'Войти',
         tg_hint: 'Отправьте боту @moopiai свой номер и введите код.', tg: 'Через Telegram', mail: 'По email',
         code_sent: 'Код отправлен. Проверьте «Спам».', failed: 'Не удалось войти', empty: 'Пока пусто',
         approve: 'Одобрить', reject: 'Отклонить', open: 'Открыть', overdue: 'просрочено', today_tasks: 'Дела на сегодня',
         briefing: 'Утренний брифинг', recent: 'Недавние разговоры', loading: 'Загрузка…', signed_out: 'Вы вышли', hello: 'Привет',
-        claude: 'Разговор с Claude', no_claude: 'Расширение Claude Code не найдено.', signin_elsewhere: '\u0412\u0445\u043e\u0434 \u2014 \u0432 \u043f\u0430\u043d\u0435\u043b\u0438 \u00ab\u0411\u0443\u0433\u0443\u043d\u00bb.' },
+        claude: 'Разговор с Claude', no_claude: 'Расширение Claude Code не найдено.', signin_elsewhere: '\u0412\u0445\u043e\u0434 \u2014 \u0432 \u043f\u0430\u043d\u0435\u043b\u0438 \u00ab\u0411\u0443\u0433\u0443\u043d\u00bb.',
+        send_logs: '\u041e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u043e\u0442\u0447\u0451\u0442 \u043e\u0431 \u043e\u0448\u0438\u0431\u043a\u0435', logs_sent: '\u0416\u0443\u0440\u043d\u0430\u043b \u043e\u0442\u043f\u0440\u0430\u0432\u043b\u0435\u043d \u0432 MOOPI, \u0441\u043f\u0430\u0441\u0438\u0431\u043e.', logs_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u0436\u0443\u0440\u043d\u0430\u043b', installing_claude: '\u0423\u0441\u0442\u0430\u043d\u043e\u0432\u043a\u0430 Claude Code\u2026', claude_installed: 'Claude Code \u0443\u0441\u0442\u0430\u043d\u043e\u0432\u043b\u0435\u043d.' },
 };
 function lang() { return vscode.workspace.getConfiguration('moopi').get('language', 'uz') === 'ru' ? 'ru' : 'uz'; }
 function t(key) { return (T[lang()] && T[lang()][key]) || T.uz[key] || key; }
@@ -81,6 +83,7 @@ class Panel {
       this.data = await this.fetch();
       this.send({ kind: 'data', panel: this.id, data: this.data, me: this.api.me, t: this.strings() });
     } catch (e) {
+      reportError(this.context, this.api, 'panel:' + this.id, e);
       this.send({ kind: 'error', message: String(e.message || e), t: this.strings() });
     }
   }
@@ -99,7 +102,9 @@ class Panel {
       else if (m.kind === 'openFile') { const r = await this.api.get(`/files/${m.id}/link`); const url = r && (r.url || r.link); if (url) vscode.env.openExternal(vscode.Uri.parse(url.startsWith('http') ? url : this.api.base.replace(/\/api$/, '') + url)); }
       else if (m.kind === 'openClaude') { await openClaude(); }
       else if (m.kind === 'refresh') { await this.refresh(); }
+      else if (m.kind === 'sendLogs') { await sendLogs(this.context, this.api, 'user', false); }
     } catch (e) {
+      reportError(this.context, this.api, 'message:' + m.kind, e);
       this.send({ kind: 'error', message: String(e.message || e), t: this.strings() });
     }
   }
@@ -107,6 +112,68 @@ class Panel {
 
 let panels = [];
 async function refreshAll() { for (const p of panels) await p.refresh(); }
+
+/** Logs of this window: the extension host's folder (ours and Claude Code's output) and the main logs. */
+const LOGS_URL = 'https://sessions.moopi.uz/api/desktop/logs';
+const ownErrors = [];
+let logsSentAt = 0, logsSendCount = 0;
+function noteError(where, e) {
+  const line = `${new Date().toISOString()} ${where}: ${String((e && e.stack) || e).slice(0, 800)}`;
+  ownErrors.push(line); if (ownErrors.length > 100) ownErrors.shift();
+  console.error('[moopi]', line);
+}
+function tailOf(file, max) {
+  try { const st = fs.statSync(file); const fd = fs.openSync(file, 'r'); const len = Math.min(st.size, max);
+    const buf = Buffer.alloc(len); fs.readSync(fd, buf, 0, len, st.size - len); fs.closeSync(fd); return buf.toString('utf8'); } catch (e) { return ''; }
+}
+function collectLogs(context, api, reason) {
+  const parts = [];
+  parts.push(`# MOOPI Desktop log report\nreason: ${reason}\ntime: ${new Date().toISOString()}\napp: ${vscode.env.appName} ${vscode.version} (${process.platform} ${process.arch})\nextension: ${context.extension.packageJSON.version}\nuser: ${api.me ? (api.me.id + ' ' + (api.me.name || '')) : 'not signed in'}\n`);
+  parts.push('\n## own errors\n' + (ownErrors.join('\n') || '(none)') + '\n');
+  // context.logUri = <user-data>/logs/<session>/window<N>/exthost/<publisher>.<name>
+  const exthost = path.dirname(context.logUri.fsPath), windowDir = path.dirname(exthost), session = path.dirname(windowDir);
+  const files = [];
+  for (const f of ['main.log', 'sharedprocess.log', 'network.log']) files.push(path.join(session, f));
+  for (const f of ['renderer.log']) files.push(path.join(windowDir, f));
+  try { for (const f of fs.readdirSync(exthost)) { const full = path.join(exthost, f); if (fs.statSync(full).isFile()) files.push(full); else if (/claude|moopi|output_logging/i.test(f)) for (const g of fs.readdirSync(full)) files.push(path.join(full, g)); } } catch (e) {}
+  for (const f of files) { const t = tailOf(f, 60 * 1024); if (t) parts.push(`\n## ${path.relative(session, f)}\n${t}\n`); }
+  return parts.join('');
+}
+async function sendLogs(context, api, reason, quiet) {
+  if (!api.token) { if (!quiet) vscode.window.showWarningMessage(t('signin')); return false; }
+  try {
+    const text = collectLogs(context, api, reason);
+    const r = await fetch(LOGS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain; charset=utf-8', Authorization: 'Bearer ' + api.token, 'X-MOOPI-Reason': reason }, body: text.slice(0, 1024 * 1024) });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    if (!quiet) vscode.window.showInformationMessage(t('logs_sent'));
+    return true;
+  } catch (e) {
+    noteError('sendLogs', e);
+    if (!quiet) vscode.window.showErrorMessage(t('logs_failed') + ': ' + (e.message || e));
+    return false;
+  }
+}
+/** The extension's own errors go to MOOPI by themselves, at most 3 reports an hour. */
+function reportError(context, api, where, e) {
+  noteError(where, e);
+  const now = Date.now();
+  if (now - logsSentAt > 3600 * 1000) { logsSentAt = now; logsSendCount = 0; }
+  if (logsSendCount >= 3) return;
+  logsSendCount += 1;
+  setTimeout(() => sendLogs(context, api, 'auto:' + where, true), 3000);
+}
+
+/** Claude Code, from Open VSX, on the first start (the build ships MOOPI's extension; Claude's is theirs). */
+async function ensureClaude(context) {
+  if (vscode.extensions.getExtension('Anthropic.claude-code') || vscode.extensions.getExtension('anthropic.claude-code')) return true;
+  try {
+    await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: t('installing_claude') }, async () => {
+      await vscode.commands.executeCommand('workbench.extensions.installExtension', 'anthropic.claude-code');
+    });
+    vscode.window.showInformationMessage(t('claude_installed'));
+    return true;
+  } catch (e) { noteError('ensureClaude', e); vscode.window.showWarningMessage(t('no_claude') + ' ' + (e.message || '')); return false; }
+}
 
 /** Claude Code's own panel, in the editor area: the chat in the middle of the MOOPI window. */
 async function openClaude() {
@@ -133,11 +200,13 @@ function activate(context) {
     vscode.commands.registerCommand('moopi.signOut', async () => { await api.signOut(); vscode.window.showInformationMessage(t('signed_out')); }),
     vscode.commands.registerCommand('moopi.refresh', () => refreshAll()),
     vscode.commands.registerCommand('moopi.openClaude', () => openClaude()),
+    vscode.commands.registerCommand('moopi.sendLogs', () => sendLogs(context, api, 'user', false)),
   );
+  process.on('unhandledRejection', (e) => reportError(context, api, 'unhandledRejection', e));
   api.load().then(() => showStatus());
   // The MOOPI side first, Claude in the middle once the window has settled.
   setTimeout(() => { vscode.commands.executeCommand('moopi.bugun.focus').then(() => {}, () => {}); }, 800);
-  setTimeout(() => { openClaude(); }, 2500);
+  setTimeout(async () => { if (await ensureClaude(context)) openClaude(); }, 2500);
   // Refresh the panels now and then while the window is open.
   const timer = setInterval(() => { if (api.token) refreshAll(); }, 120000);
   context.subscriptions.push({ dispose: () => clearInterval(timer) });
