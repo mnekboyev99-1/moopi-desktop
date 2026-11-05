@@ -12,6 +12,8 @@ const T = {
         approve: 'Tasdiqlash', reject: 'Rad etish', open: 'Ochish', overdue: 'muddati o‘tgan', today_tasks: 'Bugungi ishlar',
         briefing: 'Ertalabki brifing', recent: 'Oxirgi suhbatlar', loading: 'Yuklanmoqda…', signed_out: 'Chiqdingiz', hello: 'Salom',
         claude: 'Claude bilan suhbat', no_claude: 'Claude Code kengaytmasi topilmadi.', signin_elsewhere: 'Kirish \u2014 "Bugun" panelida.',
+        voice_ask: 'Claude javoblarini ovoz bilan o\u2018qib berilsinmi? (MOOPI ovozi, keyin Cmd/Ctrl+Alt+V bilan yoqib-o\u2018chirasiz)', yes: 'Ha', no: 'Yo\u2018q', voice_on: 'Ovozli javob yoqildi', voice_off: 'Ovozli javob o\u2018chirildi',
+        tips: 'O\u2018ng tomonda yozasiz, chapda MOOPI ko\u2018rsatadi va bajaradi. Rasm yoki skrinshotni Claude maydoniga tortib tashlang. Fayllar bo\u2018limidagi yulduzcha faylni Claude\u2019ga beradi.', ok: 'Tushundim',
         uploaded: 'MOOPI\u2019ga yuklandi: {f}', upload_failed_f: 'MOOPI\u2019ga yuklab bo\u2018lmadi: {f}',
         file_ready: 'Fayl Claude uchun tayyor: {m} \u2014 yozish maydoniga qo\u2018ying (Cmd+V / Ctrl+V).', go_claude: 'Claude\u2019ga o\u2018tish', file_failed: 'Faylni olib bo\u2018lmadi', approvals_waiting: '{n} ta tasdiq kutmoqda', open_approvals: 'Tasdiqlarni ochish',
         send_logs: 'Xatoni yuborish', logs_sent: 'Jurnal MOOPI\u2019ga yuborildi, rahmat.', logs_failed: 'Jurnalni yuborib bo\u2018lmadi', installing_claude: 'Claude Code o\u2018rnatilmoqda\u2026', claude_installed: 'Claude Code o\u2018rnatildi.' },
@@ -21,6 +23,8 @@ const T = {
         approve: 'Одобрить', reject: 'Отклонить', open: 'Открыть', overdue: 'просрочено', today_tasks: 'Дела на сегодня',
         briefing: 'Утренний брифинг', recent: 'Недавние разговоры', loading: 'Загрузка…', signed_out: 'Вы вышли', hello: 'Привет',
         claude: 'Разговор с Claude', no_claude: 'Расширение Claude Code не найдено.', signin_elsewhere: '\u0412\u0445\u043e\u0434 \u2014 \u0432 \u043f\u0430\u043d\u0435\u043b\u0438 \u00ab\u0411\u0443\u0433\u0443\u043d\u00bb.',
+        voice_ask: '\u041e\u0437\u0432\u0443\u0447\u0438\u0432\u0430\u0442\u044c \u043e\u0442\u0432\u0435\u0442\u044b Claude \u0433\u043e\u043b\u043e\u0441\u043e\u043c MOOPI? (\u043f\u043e\u0442\u043e\u043c Cmd/Ctrl+Alt+V)', yes: '\u0414\u0430', no: '\u041d\u0435\u0442', voice_on: '\u0413\u043e\u043b\u043e\u0441\u043e\u0432\u044b\u0435 \u043e\u0442\u0432\u0435\u0442\u044b \u0432\u043a\u043b\u044e\u0447\u0435\u043d\u044b', voice_off: '\u0413\u043e\u043b\u043e\u0441\u043e\u0432\u044b\u0435 \u043e\u0442\u0432\u0435\u0442\u044b \u0432\u044b\u043a\u043b\u044e\u0447\u0435\u043d\u044b',
+        tips: '\u0421\u043f\u0440\u0430\u0432\u0430 \u043f\u0438\u0448\u0435\u0442\u0435, \u0441\u043b\u0435\u0432\u0430 MOOPI \u043f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0435\u0442 \u0438 \u0434\u0435\u043b\u0430\u0435\u0442. \u041f\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u043a\u0430\u0440\u0442\u0438\u043d\u043a\u0443 \u0432 \u043f\u043e\u043b\u0435 Claude. \u0417\u0432\u0451\u0437\u0434\u043e\u0447\u043a\u0430 \u0432 \u0424\u0430\u0439\u043b\u0430\u0445 \u043f\u0435\u0440\u0435\u0434\u0430\u0451\u0442 \u0444\u0430\u0439\u043b Claude.', ok: '\u041f\u043e\u043d\u044f\u0442\u043d\u043e',
         uploaded: '\u0417\u0430\u0433\u0440\u0443\u0436\u0435\u043d\u043e \u0432 MOOPI: {f}', upload_failed_f: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u0432 MOOPI: {f}',
         file_ready: '\u0424\u0430\u0439\u043b \u0433\u043e\u0442\u043e\u0432 \u0434\u043b\u044f Claude: {m} \u2014 \u0432\u0441\u0442\u0430\u0432\u044c\u0442\u0435 \u0432 \u043f\u043e\u043b\u0435 \u0432\u0432\u043e\u0434\u0430 (Cmd+V / Ctrl+V).', go_claude: '\u041f\u0435\u0440\u0435\u0439\u0442\u0438 \u043a Claude', file_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0444\u0430\u0439\u043b', approvals_waiting: '{n} \u0437\u0430\u043f\u0440\u043e\u0441\u043e\u0432 \u0436\u0434\u0443\u0442 \u043e\u0434\u043e\u0431\u0440\u0435\u043d\u0438\u044f', open_approvals: '\u041e\u0442\u043a\u0440\u044b\u0442\u044c \u043e\u0434\u043e\u0431\u0440\u0435\u043d\u0438\u044f',
         send_logs: '\u041e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u043e\u0442\u0447\u0451\u0442 \u043e\u0431 \u043e\u0448\u0438\u0431\u043a\u0435', logs_sent: '\u0416\u0443\u0440\u043d\u0430\u043b \u043e\u0442\u043f\u0440\u0430\u0432\u043b\u0435\u043d \u0432 MOOPI, \u0441\u043f\u0430\u0441\u0438\u0431\u043e.', logs_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u0436\u0443\u0440\u043d\u0430\u043b', installing_claude: '\u0423\u0441\u0442\u0430\u043d\u043e\u0432\u043a\u0430 Claude Code\u2026', claude_installed: 'Claude Code \u0443\u0441\u0442\u0430\u043d\u043e\u0432\u043b\u0435\u043d.' },
@@ -254,6 +258,87 @@ function startSync(context, api) {
   context.subscriptions.push(api.onChange(() => { if (api.token) setTimeout(sweep, 5000); }));
 }
 
+/** Claude's answers read aloud: the extension follows Claude Code's own transcript of this workspace
+ *  (~/.claude/projects/<folder>/*.jsonl, written by the unmodified binary), sends each new answer's text to
+ *  MOOPI's voice (the user's chosen voice, a small API cost) and plays it with the system player. */
+const voice = { on: false, queue: Promise.resolve(), player: null, offsets: new Map(), watcher: null, started: 0 };
+function transcriptDir() {
+  const folder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
+  if (!folder) return null;
+  const key = folder.uri.fsPath.replace(/[^A-Za-z0-9]/g, '-');
+  return path.join(require('os').homedir(), '.claude', 'projects', key);
+}
+function readNewLines(file) {
+  let st; try { st = fs.statSync(file); } catch (e) { return []; }
+  const from = voice.offsets.has(file) ? voice.offsets.get(file) : (st.mtimeMs < voice.started ? st.size : 0);
+  if (st.size <= from) { voice.offsets.set(file, st.size); return []; }
+  const fd = fs.openSync(file, 'r'); const buf = Buffer.alloc(st.size - from);
+  fs.readSync(fd, buf, 0, buf.length, from); fs.closeSync(fd);
+  const text = buf.toString('utf8'); const cut = text.lastIndexOf('\n');
+  voice.offsets.set(file, from + Buffer.byteLength(text.slice(0, cut + 1)));
+  return text.slice(0, cut).split('\n').filter(Boolean);
+}
+function answersIn(lines) {
+  const out = [];
+  for (const line of lines) {
+    let d; try { d = JSON.parse(line); } catch (e) { continue; }
+    if (d.type !== 'assistant' || d.isSidechain) continue;
+    const c = d.message && d.message.content;
+    if (!Array.isArray(c)) continue;
+    const text = c.filter((b) => b && b.type === 'text' && b.text).map((b) => b.text).join('\n').trim();
+    if (text.length > 1) out.push(text);
+  }
+  return out;
+}
+function startVoiceWatch(context, api) {
+  const dir = transcriptDir(); if (!dir || voice.watcher) return;
+  voice.started = Date.now();
+  try { fs.mkdirSync(dir, { recursive: true }); } catch (e) {}
+  try {
+    voice.watcher = fs.watch(dir, (ev, name) => {
+      if (!voice.on || !name || !name.endsWith('.jsonl')) return;
+      for (const text of answersIn(readNewLines(path.join(dir, name)))) speak(context, api, text);
+    });
+    context.subscriptions.push({ dispose: () => { try { voice.watcher.close(); } catch (e) {} } });
+  } catch (e) { noteError('voiceWatch', e); }
+}
+function stripForSpeech(text) {
+  return text.replace(/```[\s\S]*?```/g, ' ').replace(/[*_`#>|]/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/\s+/g, ' ').trim().slice(0, 1500);
+}
+function speak(context, api, text) {
+  if (!voice.on || !api.token) return;
+  const say = stripForSpeech(text); if (say.length < 2) return;
+  voice.queue = voice.queue.then(async () => {
+    if (!voice.on) return;
+    try {
+      const r = await fetch(`${api.base}/voice/speak`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + api.token }, body: JSON.stringify({ text: say }) });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const file = path.join(require('os').tmpdir(), `moopi-say-${Date.now()}.mp3`);
+      fs.writeFileSync(file, Buffer.from(await r.arrayBuffer()));
+      await playFile(file);
+      try { fs.unlinkSync(file); } catch (e) {}
+    } catch (e) { noteError('speak', e); }
+  });
+}
+function playFile(file) {
+  const cp = require('child_process');
+  return new Promise((resolve) => {
+    let child;
+    if (process.platform === 'darwin') child = cp.spawn('afplay', [file]);
+    else if (process.platform === 'win32') child = cp.spawn('powershell', ['-NoProfile', '-NonInteractive', '-Command', `Add-Type -AssemblyName PresentationCore; $p = New-Object System.Windows.Media.MediaPlayer; $p.Open([Uri]${JSON.stringify(file)}); Start-Sleep -m 300; $p.Play(); while (-not $p.NaturalDuration.HasTimeSpan) { Start-Sleep -m 100 }; Start-Sleep -m ([int]$p.NaturalDuration.TimeSpan.TotalMilliseconds + 300); $p.Close()`]);
+    else child = cp.spawn('sh', ['-c', `mpg123 -q "${file}" || ffplay -nodisp -autoexit -loglevel quiet "${file}"`]);
+    voice.player = child;
+    child.on('exit', () => { voice.player = null; resolve(); });
+    child.on('error', () => { voice.player = null; resolve(); });
+  });
+}
+function setVoice(context, on) {
+  voice.on = on; context.globalState.update('moopi.voice', on);
+  if (!on && voice.player) { try { voice.player.kill(); } catch (e) {} }
+  vscode.window.setStatusBarMessage(t(on ? 'voice_on' : 'voice_off'), 4000);
+  vscode.window.showInformationMessage(t(on ? 'voice_on' : 'voice_off'));
+}
+
 /** A notification of the operating system (the window may be behind others). */
 function osNotify(title, body) {
   const cp = require('child_process');
@@ -420,7 +505,18 @@ function activate(context) {
     vscode.commands.registerCommand('moopi.refresh', () => refreshAll()),
     vscode.commands.registerCommand('moopi.openClaude', () => openClaude()),
     vscode.commands.registerCommand('moopi.sendLogs', () => sendLogs(context, api, 'user', false)),
+    vscode.commands.registerCommand('moopi.voiceToggle', () => setVoice(context, !voice.on)),
   );
+  voice.on = !!context.globalState.get('moopi.voice');
+  startVoiceWatch(context, api);
+  // Once, after the first sign-in: the three things to know, and whether answers should be read aloud.
+  context.subscriptions.push(api.onChange(async () => {
+    if (!api.token || context.globalState.get('moopi.welcomed')) return;
+    await context.globalState.update('moopi.welcomed', true);
+    vscode.window.showInformationMessage(t('tips'), t('ok'));
+    const pick = await vscode.window.showInformationMessage(t('voice_ask'), t('yes'), t('no'));
+    if (pick === t('yes')) setVoice(context, true);
+  }));
   process.on('unhandledRejection', (e) => reportError(context, api, 'unhandledRejection', e));
   context.subscriptions.push(vscode.commands.registerCommand('moopi.openApp', () => openApp(context, api)));
   context.subscriptions.push(vscode.commands.registerCommand('moopi.reloadApp', () => { if (appPanel) appPanel.webview.postMessage({ reload: true }); else openApp(context, api); }));
