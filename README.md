@@ -22,3 +22,10 @@ to'lamaymiz; "Claude Code bilan ishlaydi" deb yozish mumkin, Claude nomi va logo
 2. **B:** brendlangan yig'ilma (nom, belgi, bundle id) — VSCodium manbasidan GitHub Actions'da (APP_NAME=MOOPI ...),
    macOS/Windows o'rnatgichlar, imzolash (Apple developer hisobi kerak).
 3. **C:** serverdagi sandbox bilan bog'lanish (bitta suhbat telefon va kompyuterda), yangilanish mexanizmi.
+
+## Eslatma (05.11): Mac'da yengil qayta brendlash ishlamadi
+
+`dev/brand-mac.sh` (bundle nusxasi, nom/belgi/plist, ad-hoc qayta imzolash) tayyor, lekin bu macOS'da
+qayta imzolangan nusxa Launch Services orqali ishga tushmaydi ("Launchd job spawn failed", imzo tekshiruvdan
+o'tsa ham). Shuning uchun A bosqichida asl `VSCodium.app` ishlatiladi (menyuda "VSCodium" nomi qoladi),
+nom va belgi B bosqichida manbadan yig'ilgan brendlangan yig'ilma bilan keladi.

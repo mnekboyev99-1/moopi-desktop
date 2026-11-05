@@ -13,7 +13,7 @@ rm -rf "$DST"; cp -R "$SRC" "$DST"
 PLIST="$DST/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleName 'MOOPI Desktop'" "$PLIST"
 /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName 'MOOPI Desktop'" "$PLIST" 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string 'MOOPI Desktop'" "$PLIST"
-/usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier uz.moopi.desktop" "$PLIST"
+[ -n "${KEEP_ID:-}" ] || /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier uz.moopi.desktop" "$PLIST"
 # The icon: an .icns made from MOOPI's mark.
 ICNS_NAME="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$PLIST")"; ICNS_NAME="${ICNS_NAME%.icns}.icns"
 if [ -f "$ICON_PNG" ]; then
@@ -34,5 +34,15 @@ d["darwinBundleIdentifier"] = "uz.moopi.desktop"
 d["dataFolderName"] = ".moopi-desktop"
 json.dump(d, open(p, "w"), indent=2, ensure_ascii=False)
 PY
-codesign --force --deep --sign - "$DST" >/dev/null 2>&1 || true
+# Re-sign ad hoc with the original entitlements (Electron's helpers need theirs: JIT, library validation).
+if [ -z "${SKIP_SIGN:-}" ]; then
+  ENT="$(mktemp -t ent).plist"; codesign -d --entitlements :- "$SRC" > "$ENT" 2>/dev/null || true
+  xattr -cr "$DST" 2>/dev/null || true
+  if [ -s "$ENT" ]; then
+    codesign --force --deep --sign - --entitlements "$ENT" "$DST" 2>&1 | grep -v "replacing existing signature" || true
+  else
+    codesign --force --deep --sign - "$DST" 2>&1 | grep -v "replacing existing signature" || true
+  fi
+  rm -f "$ENT"
+fi
 echo "made: $DST"
