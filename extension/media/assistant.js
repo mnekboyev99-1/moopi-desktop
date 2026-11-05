@@ -78,46 +78,44 @@
     else if (m.kind === 'clear') { log.innerHTML = ''; live = null; lastAnswer = ''; $('attach').hidden = true; }
   });
 
-  // ---- the light: a glass ribbon folded into a circle, breathing; rings when listening; orbiting sparks when
-  // thinking; a pulse of sound when speaking. Canvas, no library.
-  const cv = $('orb'), g = cv.getContext('2d'), W = cv.width, H = cv.height, C = W / 2;
-  const rings = []; let lastRing = 0;
-  function noise(a, t, k) { return Math.sin(a * 3 + t * .9 + k) * .5 + Math.sin(a * 5 - t * .7 + k * 2) * .3 + Math.sin(a * 8 + t * 1.3) * .2; }
+  // ---- the light: MOOPI's ribbon — thin lines of glass flowing across, as in the app's voice screen. They rest
+  // and breathe; rise and quicken when listening; swirl when thinking; pulse with the voice when speaking.
+  const cv = $('orb'), g = cv.getContext('2d');
+  function size() { const r = cv.getBoundingClientRect(); cv.width = Math.max(300, r.width * 2); cv.height = Math.max(120, r.height * 2); }
+  size(); addEventListener('resize', size);
+  const LINES = 9;
   function draw(now) {
-    const t = now / 1000; g.clearRect(0, 0, W, H);
-    const base = W * .27, breathe = Math.sin(t * (state === 'thinking' ? 2.2 : .9)) * (state === 'idle' ? 3 : 6);
-    const amp = state === 'listening' ? 14 : state === 'speaking' ? 10 + Math.abs(Math.sin(t * 9)) * 10 + Math.abs(Math.sin(t * 13.7)) * 6 : state === 'thinking' ? 9 : 5;
-    // glow
-    const glow = g.createRadialGradient(C, C, base * .2, C, C, base * 1.9);
-    glow.addColorStop(0, 'rgba(0,200,164,.35)'); glow.addColorStop(.6, 'rgba(0,200,164,.08)'); glow.addColorStop(1, 'rgba(0,200,164,0)');
-    g.fillStyle = glow; g.fillRect(0, 0, W, H);
-    // listening rings
-    if (state === 'listening' && now - lastRing > 700) { rings.push(now); lastRing = now; }
-    for (let i = rings.length - 1; i >= 0; i--) {
-      const age = (now - rings[i]) / 1600; if (age > 1) { rings.splice(i, 1); continue; }
-      g.beginPath(); g.arc(C, C, base + 10 + age * base * .9, 0, Math.PI * 2); g.strokeStyle = `rgba(127,245,218,${(1 - age) * .55})`; g.lineWidth = 2 - age; g.stroke();
-    }
-    // ribbons
+    const t = now / 1000, W = cv.width, H = cv.height, mid = H / 2;
+    g.clearRect(0, 0, W, H);
+    const energy = state === 'listening' ? .55 : state === 'thinking' ? .7 : state === 'speaking' ? .5 + Math.abs(Math.sin(t * 7.3)) * .35 + Math.abs(Math.sin(t * 11.1)) * .2 : .22;
+    const speed = state === 'thinking' ? 2.6 : state === 'listening' ? 1.4 : state === 'speaking' ? 1.9 : .7;
+    const amp = H * .22 * energy;
     g.globalCompositeOperation = 'lighter';
-    for (let r = 0; r < 3; r++) {
+    for (let k = 0; k < LINES; k++) {
+      const ph = k / LINES, off = (ph - .5) * amp * .9;
       g.beginPath();
-      for (let i = 0; i <= 120; i++) {
-        const a = (i / 120) * Math.PI * 2, rad = base + breathe + noise(a, t * (1 + r * .2), r * 1.7) * amp * (1 - r * .22);
-        const x = C + Math.cos(a) * rad, y = C + Math.sin(a) * rad; i ? g.lineTo(x, y) : g.moveTo(x, y);
+      for (let i = 0; i <= 160; i++) {
+        const x = (i / 160) * W, u = i / 160;
+        const env = Math.sin(u * Math.PI); // quiet at the edges, alive in the middle
+        const y = mid + off * env + env * amp * (Math.sin(u * 6.2 + t * speed + k * .9) * .55 + Math.sin(u * 11.3 - t * speed * .8 + k * 1.7) * .3 + Math.sin(u * 2.1 + t * .6 + k) * .25);
+        i ? g.lineTo(x, y) : g.moveTo(x, y);
       }
-      g.closePath();
-      g.strokeStyle = r === 0 ? 'rgba(127,245,218,.95)' : r === 1 ? 'rgba(0,200,164,.7)' : 'rgba(0,160,130,.45)';
-      g.lineWidth = r === 0 ? 2.6 : 1.6; g.shadowColor = 'rgba(0,200,164,.9)'; g.shadowBlur = 18; g.stroke();
+      const a = .25 + .55 * (1 - Math.abs(ph - .5) * 1.4);
+      g.strokeStyle = k % 3 === 0 ? `rgba(127,245,218,${a})` : k % 3 === 1 ? `rgba(0,200,164,${a * .9})` : `rgba(0,150,125,${a * .7})`;
+      g.lineWidth = k % 3 === 0 ? 2.4 : 1.4;
+      g.shadowColor = 'rgba(0,200,164,.8)'; g.shadowBlur = state === 'idle' ? 6 : 14;
+      g.stroke();
     }
     g.shadowBlur = 0; g.globalCompositeOperation = 'source-over';
-    // the heart
-    const core = g.createRadialGradient(C - base * .25, C - base * .3, 2, C, C, base * .75);
-    core.addColorStop(0, 'rgba(255,255,255,.85)'); core.addColorStop(.25, 'rgba(127,245,218,.55)'); core.addColorStop(1, 'rgba(0,120,100,.05)');
-    g.beginPath(); g.arc(C, C, base * .72 + breathe * .4, 0, Math.PI * 2); g.fillStyle = core; g.fill();
-    // thinking sparks
-    if (state === 'thinking') for (let k = 0; k < 3; k++) {
-      const a = t * 2.4 + k * (Math.PI * 2 / 3), rr = base + 26 + Math.sin(t * 3 + k) * 6;
-      g.beginPath(); g.arc(C + Math.cos(a) * rr, C + Math.sin(a) * rr, 3.5, 0, Math.PI * 2); g.fillStyle = 'rgba(127,245,218,.95)'; g.shadowColor = '#7FF5DA'; g.shadowBlur = 12; g.fill(); g.shadowBlur = 0;
+    if (state === 'listening') { // a soft beat under the ribbon
+      const pulse = (Math.sin(t * 3.2) + 1) / 2;
+      const gl = g.createRadialGradient(W / 2, mid, 4, W / 2, mid, W * .22);
+      gl.addColorStop(0, `rgba(127,245,218,${.14 + pulse * .12})`); gl.addColorStop(1, 'rgba(127,245,218,0)');
+      g.fillStyle = gl; g.fillRect(0, 0, W, H);
+    }
+    if (state === 'thinking') for (let k = 0; k < 3; k++) { // sparks travelling along it
+      const u = ((t * .35 + k / 3) % 1), x = u * W, y = mid + Math.sin(u * 6.2 + t * speed) * amp * .5;
+      g.beginPath(); g.arc(x, y, 3.5, 0, Math.PI * 2); g.fillStyle = 'rgba(255,255,255,.9)'; g.shadowColor = '#7FF5DA'; g.shadowBlur = 14; g.fill(); g.shadowBlur = 0;
     }
     requestAnimationFrame(draw);
   }
