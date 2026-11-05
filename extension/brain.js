@@ -58,6 +58,8 @@ function ask(opts) {
     if (opts.system) args.push('--append-system-prompt', opts.system);
     const env = { ...process.env };
     delete env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC;
+    // Never on an API key: the brain runs on the person's Claude sign-in (the subscription) and nothing else.
+    delete env.ANTHROPIC_API_KEY; delete env.ANTHROPIC_AUTH_TOKEN;
     const child = cp.spawn(bin, args, { cwd: WORKSPACE_DIR, env, windowsHide: true });
     current = child;
     let buf = '', err = '', text = '', result = null, turns = 0;
