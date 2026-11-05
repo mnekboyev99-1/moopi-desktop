@@ -326,7 +326,9 @@ function startVoiceWatch(context, api) {
   try { fs.mkdirSync(dir, { recursive: true }); } catch (e) {}
   try {
     voice.watcher = fs.watch(dir, (ev, name) => {
-      if (!voice.on || !name || !name.endsWith('.jsonl')) return;
+      if (!name || !name.endsWith('.jsonl')) return;
+      syncTranscript(context, api, path.join(dir, name));
+      if (!voice.on) return;
       for (const text of answersIn(readNewLines(path.join(dir, name)))) speak(context, api, text);
     });
     context.subscriptions.push({ dispose: () => { try { voice.watcher.close(); } catch (e) {} } });
@@ -774,6 +776,65 @@ async function ping(context, api, error) {
   } catch (e) { noteError('ping', e); }
 }
 
+/** Every conversation in Claude's panel is MOOPI's too (owner's rule, 05.11.2026: nothing said in the
+ *  app is lost, yesterday's work is known tomorrow). The extension follows Claude Code's transcript files
+ *  (the unmodified binary writes them) and sends each new turn — the person's words and Claude's answers,
+ *  never tool traffic — to MOOPI, where it is a conversation like the app's own: on the phone, summed up
+ *  and learned from by the background passes. A file's offset is kept and moved only after MOOPI took the
+ *  batch (a batch sent twice is recognised there by the turns' ids), so a failed send is simply sent again. */
+const transcripts = { pending: new Set(), timer: null, busy: false };
+function parseTurn(line) {
+  let d; try { d = JSON.parse(line); } catch (e) { return null; }
+  if ((d.type !== 'user' && d.type !== 'assistant') || d.isSidechain || d.isMeta || !d.uuid) return null;
+  const c = d.message && d.message.content;
+  let text = '';
+  if (typeof c === 'string') text = c;
+  else if (Array.isArray(c)) text = c.filter((b) => b && b.type === 'text' && typeof b.text === 'string').map((b) => b.text).join('\n');
+  text = text.trim();
+  if (!text || /^<(command-name|command-message|local-command|system-reminder|bash-input|bash-stdout|bash-stderr)/.test(text)) return null;
+  return { id: String(d.uuid).slice(0, 64), role: d.type, text: text.slice(0, 40000), at: d.timestamp || null };
+}
+function syncTranscript(context, api, file) {
+  transcripts.pending.add(file);
+  clearTimeout(transcripts.timer);
+  transcripts.timer = setTimeout(() => flushTranscripts(context, api).catch((e) => noteError('transcripts', e)), 3000);
+}
+async function flushTranscripts(context, api) {
+  if (transcripts.busy || !api.token) return;
+  transcripts.busy = true;
+  try {
+    const offsets = { ...(context.globalState.get('moopi.transcriptOffsets') || {}) };
+    for (const file of [...transcripts.pending]) {
+      transcripts.pending.delete(file);
+      let st; try { st = fs.statSync(file); } catch (e) { continue; }
+      let from = offsets[file] || 0; if (from > st.size) from = 0; // the file was replaced: from the start
+      if (st.size <= from) continue;
+      const fd = fs.openSync(file, 'r'); const buf = Buffer.alloc(st.size - from);
+      fs.readSync(fd, buf, 0, buf.length, from); fs.closeSync(fd);
+      const text = buf.toString('utf8'); const cut = text.lastIndexOf('\n');
+      if (cut < 0) continue; // an unfinished line: next time
+      const turns = text.slice(0, cut).split('\n').map(parseTurn).filter(Boolean);
+      const session = path.basename(file, '.jsonl');
+      let ok = true;
+      for (let i = 0; i < turns.length && ok; i += 200) {
+        try { await api.post('/desktop/transcript', { session, messages: turns.slice(i, i + 200) }); }
+        catch (e) { ok = false; noteError('transcript', e); }
+      }
+      if (ok) offsets[file] = from + Buffer.byteLength(text.slice(0, cut + 1));
+    }
+    const keys = Object.keys(offsets); if (keys.length > 500) for (const k of keys.slice(0, keys.length - 500)) delete offsets[k];
+    await context.globalState.update('moopi.transcriptOffsets', offsets);
+  } finally { transcripts.busy = false; }
+}
+/** Everything in the transcript folder, now and every 10 minutes: what the watcher missed, what was said
+ *  while MOOPI was unreachable, and a fresh installation's history. */
+function sweepTranscripts(context, api) {
+  const dir = transcriptDir(); if (!dir || !api.token) return;
+  let names = []; try { names = fs.readdirSync(dir); } catch (e) { return; }
+  for (const name of names) if (name.endsWith('.jsonl')) transcripts.pending.add(path.join(dir, name));
+  if (transcripts.pending.size) syncTranscript(context, api, [...transcripts.pending][0]);
+}
+
 function activate(context) {
   const api = new Api(context);
   panels = ['bugun', 'tasdiqlar', 'fayllar'].map((id) => new Panel(id, api, context));
@@ -794,7 +855,8 @@ function activate(context) {
     vscode.commands.registerCommand('moopi.checkUpdate', () => checkUpdate(context, api, true)),
   );
   registerUri(context, api);
-  voice.on = !!context.globalState.get('moopi.voice');
+  // Answers read aloud unless switched off (owner's rule 05.11: everything on; the app's Desktop section has the switch).
+  voice.on = context.globalState.get('moopi.voice') === undefined ? true : !!context.globalState.get('moopi.voice');
   voice.api = api;
   startVoiceWatch(context, api);
   // Once, after the first sign-in: the three things to know, and whether answers should be read aloud.
@@ -827,6 +889,9 @@ function activate(context) {
   watchTimer = setInterval(() => watchMoopi(context, api), 60000);
   startSync(context, api);
   setTimeout(() => watchMoopi(context, api), 15000);
+  setTimeout(() => sweepTranscripts(context, api), 30000);
+  const sweeps = setInterval(() => sweepTranscripts(context, api), 600000);
+  context.subscriptions.push({ dispose: () => clearInterval(sweeps) }, api.onChange(() => { if (api.token) setTimeout(() => sweepTranscripts(context, api), 8000); }));
   context.subscriptions.push({ dispose: () => { clearInterval(timer); clearInterval(watchTimer); } });
 }
 function deactivate() {}
