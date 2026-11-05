@@ -15,7 +15,7 @@ mkdir -p "$RUN/user-data/User" "$RUN/extensions" "$HOME/MOOPI/.claude"
 # The workspace: MOOPI's persona for Claude Code and the MOOPI MCP server (the connector; sign-in by OAuth
 # in the browser the first time, Claude Code keeps the token). Written only when missing, so the user's
 # own edits stay.
-[ -f "$HOME/MOOPI/CLAUDE.md" ] || sed "s/{language}/o'zbek tili (lotin)/; s#{timezone}#Asia/Tashkent#" "$ROOT/workspace/CLAUDE.md" > "$HOME/MOOPI/CLAUDE.md"
+sed "s/{language}/o'zbek tili (lotin)/; s#{timezone}#Asia/Tashkent#" "$ROOT/workspace/CLAUDE.md" > "$HOME/MOOPI/CLAUDE.md"  # MOOPI's own file, refreshed every start
 [ -f "$HOME/MOOPI/.mcp.json" ] || cp "$ROOT/workspace/mcp.json" "$HOME/MOOPI/.mcp.json"
 [ -f "$HOME/MOOPI/.claude/settings.json" ] || cp "$ROOT/workspace/settings.json" "$HOME/MOOPI/.claude/settings.json"
 # Settings: ours win on every start (the user's own edits go to other keys).

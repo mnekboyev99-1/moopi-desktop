@@ -12,6 +12,7 @@ const T = {
         approve: 'Tasdiqlash', reject: 'Rad etish', open: 'Ochish', overdue: 'muddati o‘tgan', today_tasks: 'Bugungi ishlar',
         briefing: 'Ertalabki brifing', recent: 'Oxirgi suhbatlar', loading: 'Yuklanmoqda…', signed_out: 'Chiqdingiz', hello: 'Salom',
         claude: 'Claude bilan suhbat', no_claude: 'Claude Code kengaytmasi topilmadi.', signin_elsewhere: 'Kirish \u2014 "Bugun" panelida.',
+        uploaded: 'MOOPI\u2019ga yuklandi: {f}', upload_failed_f: 'MOOPI\u2019ga yuklab bo\u2018lmadi: {f}',
         file_ready: 'Fayl Claude uchun tayyor: {m} \u2014 yozish maydoniga qo\u2018ying (Cmd+V / Ctrl+V).', go_claude: 'Claude\u2019ga o\u2018tish', file_failed: 'Faylni olib bo\u2018lmadi', approvals_waiting: '{n} ta tasdiq kutmoqda', open_approvals: 'Tasdiqlarni ochish',
         send_logs: 'Xatoni yuborish', logs_sent: 'Jurnal MOOPI\u2019ga yuborildi, rahmat.', logs_failed: 'Jurnalni yuborib bo\u2018lmadi', installing_claude: 'Claude Code o\u2018rnatilmoqda\u2026', claude_installed: 'Claude Code o\u2018rnatildi.' },
   ru: { signin: 'Войдите в аккаунт MOOPI', email: 'Email', code: '6-значный код', send_code: 'Отправить код', enter: 'Войти',
@@ -20,6 +21,7 @@ const T = {
         approve: 'Одобрить', reject: 'Отклонить', open: 'Открыть', overdue: 'просрочено', today_tasks: 'Дела на сегодня',
         briefing: 'Утренний брифинг', recent: 'Недавние разговоры', loading: 'Загрузка…', signed_out: 'Вы вышли', hello: 'Привет',
         claude: 'Разговор с Claude', no_claude: 'Расширение Claude Code не найдено.', signin_elsewhere: '\u0412\u0445\u043e\u0434 \u2014 \u0432 \u043f\u0430\u043d\u0435\u043b\u0438 \u00ab\u0411\u0443\u0433\u0443\u043d\u00bb.',
+        uploaded: '\u0417\u0430\u0433\u0440\u0443\u0436\u0435\u043d\u043e \u0432 MOOPI: {f}', upload_failed_f: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u0432 MOOPI: {f}',
         file_ready: '\u0424\u0430\u0439\u043b \u0433\u043e\u0442\u043e\u0432 \u0434\u043b\u044f Claude: {m} \u2014 \u0432\u0441\u0442\u0430\u0432\u044c\u0442\u0435 \u0432 \u043f\u043e\u043b\u0435 \u0432\u0432\u043e\u0434\u0430 (Cmd+V / Ctrl+V).', go_claude: '\u041f\u0435\u0440\u0435\u0439\u0442\u0438 \u043a Claude', file_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0444\u0430\u0439\u043b', approvals_waiting: '{n} \u0437\u0430\u043f\u0440\u043e\u0441\u043e\u0432 \u0436\u0434\u0443\u0442 \u043e\u0434\u043e\u0431\u0440\u0435\u043d\u0438\u044f', open_approvals: '\u041e\u0442\u043a\u0440\u044b\u0442\u044c \u043e\u0434\u043e\u0431\u0440\u0435\u043d\u0438\u044f',
         send_logs: '\u041e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u043e\u0442\u0447\u0451\u0442 \u043e\u0431 \u043e\u0448\u0438\u0431\u043a\u0435', logs_sent: '\u0416\u0443\u0440\u043d\u0430\u043b \u043e\u0442\u043f\u0440\u0430\u0432\u043b\u0435\u043d \u0432 MOOPI, \u0441\u043f\u0430\u0441\u0438\u0431\u043e.', logs_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u0436\u0443\u0440\u043d\u0430\u043b', installing_claude: '\u0423\u0441\u0442\u0430\u043d\u043e\u0432\u043a\u0430 Claude Code\u2026', claude_installed: 'Claude Code \u0443\u0441\u0442\u0430\u043d\u043e\u0432\u043b\u0435\u043d.' },
 };
@@ -171,6 +173,8 @@ async function giveFile(context, api, id, name) {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const bytes = new Uint8Array(await r.arrayBuffer());
     await vscode.workspace.fs.createDirectory(dir);
+    const from = new Set(context.globalState.get('moopi.fromMoopi') || []); from.add(target.fsPath);
+    await context.globalState.update('moopi.fromMoopi', [...from].slice(-500));
     await vscode.workspace.fs.writeFile(target, bytes);
     const mention = '@fayllar/' + safe;
     await vscode.env.clipboard.writeText(mention + ' ');
@@ -183,6 +187,71 @@ async function giveFile(context, api, id, name) {
     reportError(context, api, 'giveFile', e);
     vscode.window.showErrorMessage(t('file_failed') + ': ' + (e.message || e));
   }
+}
+
+/** Two folders of the workspace are MOOPI's: fayllar/ (what the user gives Claude) and tayyor/ (what Claude
+ *  makes, by the CLAUDE.md rule). Every new or changed file there goes into MOOPI's Fayllar with the user's
+ *  own sign-in (a plain upload, no model), so the phone and MOOPI's memory see the same files. Files that
+ *  came down from MOOPI (giveFile) are left alone. */
+const SYNC_FOLDERS = ['fayllar', 'tayyor'];
+const SYNC_MAX = 25 * 1024 * 1024;
+const pendingUploads = new Map();
+async function uploadToMoopi(context, api, fsPath) {
+  const name = path.basename(fsPath);
+  try {
+    const st = fs.statSync(fsPath);
+    if (!st.isFile() || st.size === 0 || st.size > SYNC_MAX) return;
+    const uploaded = context.globalState.get('moopi.uploaded') || {};
+    if (uploaded[fsPath] === st.mtimeMs) return;
+    const form = new FormData();
+    form.append('file', new Blob([fs.readFileSync(fsPath)]), name);
+    const r = await fetch(`${api.base}/files`, { method: 'POST', headers: { Authorization: 'Bearer ' + api.token }, body: form });
+    if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + (await r.text()).slice(0, 120));
+    uploaded[fsPath] = st.mtimeMs;
+    const keys = Object.keys(uploaded); if (keys.length > 1000) for (const k of keys.slice(0, keys.length - 1000)) delete uploaded[k];
+    await context.globalState.update('moopi.uploaded', uploaded);
+    console.log('[moopi] uploaded', fsPath);
+    vscode.window.setStatusBarMessage(t('uploaded').replace('{f}', name), 6000);
+    vscode.window.showInformationMessage(t('uploaded').replace('{f}', name));
+  } catch (e) {
+    reportError(context, api, 'upload', e);
+    vscode.window.showWarningMessage(t('upload_failed_f').replace('{f}', name) + ' (' + (e.message || e) + ')');
+  }
+}
+function wantsSync(context, fsPath) {
+  const name = path.basename(fsPath);
+  if (name.startsWith('.') || name.startsWith('~$') || /\.(tmp|part|crdownload|swp)$/i.test(name)) return false;
+  const from = new Set(context.globalState.get('moopi.fromMoopi') || []);
+  return !from.has(fsPath);
+}
+function scheduleUpload(context, api, fsPath) {
+  if (!api.token || !wantsSync(context, fsPath)) return;
+  clearTimeout(pendingUploads.get(fsPath));
+  pendingUploads.set(fsPath, setTimeout(() => { pendingUploads.delete(fsPath); uploadToMoopi(context, api, fsPath); }, 2500));
+}
+function startSync(context, api) {
+  const folder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
+  if (!folder) return;
+  for (const sub of SYNC_FOLDERS) {
+    const dir = vscode.Uri.joinPath(folder.uri, sub);
+    vscode.workspace.fs.createDirectory(dir).then(() => {}, () => {});
+    const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(folder, sub + '/**'));
+    watcher.onDidCreate((u) => scheduleUpload(context, api, u.fsPath));
+    watcher.onDidChange((u) => scheduleUpload(context, api, u.fsPath));
+    context.subscriptions.push(watcher);
+  }
+  // What appeared while the window was closed.
+  const sweep = () => {
+    if (!api.token) return;
+    let n = 0;
+    for (const sub of SYNC_FOLDERS) {
+      const dir = path.join(folder.uri.fsPath, sub);
+      let names = []; try { names = fs.readdirSync(dir); } catch (e) { continue; }
+      for (const name of names) { if (n++ > 50) break; scheduleUpload(context, api, path.join(dir, name)); }
+    }
+  };
+  setTimeout(sweep, 20000);
+  context.subscriptions.push(api.onChange(() => { if (api.token) setTimeout(sweep, 5000); }));
 }
 
 /** A notification of the operating system (the window may be behind others). */
@@ -363,6 +432,7 @@ function activate(context) {
   // Refresh the panels now and then while the window is open; watch MOOPI for new approvals and notes.
   const timer = setInterval(() => { if (api.token) refreshAll(); }, 120000);
   watchTimer = setInterval(() => watchMoopi(context, api), 60000);
+  startSync(context, api);
   setTimeout(() => watchMoopi(context, api), 15000);
   context.subscriptions.push({ dispose: () => { clearInterval(timer); clearInterval(watchTimer); } });
 }

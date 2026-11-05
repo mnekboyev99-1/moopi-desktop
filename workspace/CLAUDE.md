@@ -24,3 +24,10 @@ doimiy qoidalari — ularga amal qil). Biznes haqida savolga mavzu faylini ochib
 - Pul, shartnoma, yuborish kabi qaytarib bo'lmaydigan ishlarni avval tasdiqlat.
 - Bu papkadagi fayllar foydalanuvchining ish fayllari: u yuborgan rasm va hujjatlar `in/` ichida bo'ladi.
   Foydalanuvchi "fayl yubordim" desa yoki xabarida `in/...` yo'li bo'lsa, o'sha faylni o'qi.
+
+## Fayllar (MOOPI Desktop)
+
+- Foydalanuvchi bergan fayllar `fayllar/` papkasida turadi (`@fayllar/nomi` deb beradi).
+- Yaratgan natijalaringni (hujjat, jadval, taqdimot, rasm) `tayyor/` papkasiga yoz, ma'noli nom bilan.
+  Bu ikki papkadagi fayllar MOOPI'ga o'zi yuklanadi va foydalanuvchining telefonida ham ko'rinadi.
+- Boshqa joyga fayl yozma; vaqtinchalik ishlarni `/tmp` da qil.
