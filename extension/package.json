@@ -2,7 +2,7 @@
   "name": "moopi-desktop",
   "displayName": "MOOPI",
   "description": "MOOPI panellari: Bugun, Tasdiqlar, Fayllar — Claude Code bilan bir oynada.",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "publisher": "moopi",
   "license": "UNLICENSED",
   "repository": {
@@ -92,6 +92,22 @@
       {
         "command": "moopi.checkUpdate",
         "title": "MOOPI: Yangilanishni tekshirish"
+      },
+      {
+        "command": "moopi.talk",
+        "title": "MOOPI: Gapirish (yordamchi)"
+      },
+      {
+        "command": "moopi.assistant",
+        "title": "MOOPI: Yordamchi oynasi"
+      },
+      {
+        "command": "moopi.askScreen",
+        "title": "MOOPI: Ekrandan so'rash"
+      },
+      {
+        "command": "moopi.askClipboard",
+        "title": "MOOPI: Nusxalaganimni berish"
       }
     ],
     "menus": {
@@ -156,14 +172,29 @@
     ],
     "keybindings": [
       {
-        "command": "moopi.voiceToggle",
-        "key": "ctrl+alt+v",
-        "mac": "cmd+alt+v"
+        "command": "moopi.talk",
+        "key": "ctrl+alt+m",
+        "mac": "ctrl+alt+m"
       },
       {
         "command": "moopi.dictate",
-        "key": "ctrl+alt+m",
-        "mac": "cmd+alt+m"
+        "key": "ctrl+alt+d",
+        "mac": "ctrl+alt+d"
+      },
+      {
+        "command": "moopi.askScreen",
+        "key": "ctrl+alt+s",
+        "mac": "ctrl+alt+s"
+      },
+      {
+        "command": "moopi.askClipboard",
+        "key": "ctrl+alt+c",
+        "mac": "ctrl+alt+c"
+      },
+      {
+        "command": "moopi.voiceToggle",
+        "key": "ctrl+alt+v",
+        "mac": "ctrl+alt+v"
       }
     ]
   }

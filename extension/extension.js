@@ -2,6 +2,9 @@
 // API, the same ways as the app), shows Bugun / Tasdiqlar / Fayllar as sidebar panels, opens Claude in the
 // editor area at startup. Nothing here touches Claude's own sign-in or the Claude Code extension.
 const vscode = require('vscode');
+const brain = require('./brain');
+const platform = require('./platform');
+const assistant = require('./assistant');
 const fs = require('fs');
 const path = require('path');
 
@@ -46,6 +49,26 @@ Object.assign(T.ru, {
   signed_in_google: '\u0412\u044b \u0432\u043e\u0448\u043b\u0438.', signin_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0432\u043e\u0439\u0442\u0438: {e}', launch_on: '\u0417\u0430\u043f\u0443\u0441\u043a \u0441 \u043a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440\u043e\u043c \u0432\u043a\u043b\u044e\u0447\u0451\u043d',
   launch_off: '\u0417\u0430\u043f\u0443\u0441\u043a \u0441 \u043a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440\u043e\u043c \u0432\u044b\u043a\u043b\u044e\u0447\u0435\u043d', hotkey_set: '\u0413\u043e\u0440\u044f\u0447\u0430\u044f \u043a\u043b\u0430\u0432\u0438\u0448\u0430: {k}', hotkey_cleared: '\u0413\u043e\u0440\u044f\u0447\u0430\u044f \u043a\u043b\u0430\u0432\u0438\u0448\u0430 \u0443\u0431\u0440\u0430\u043d\u0430',
   hotkey_bad: '\u0413\u043e\u0440\u044f\u0447\u0430\u044f \u043a\u043b\u0430\u0432\u0438\u0448\u0430 \u0432 \u0432\u0438\u0434\u0435 Ctrl+Alt+M', workspace_opening: '\u041e\u0442\u043a\u0440\u044b\u0432\u0430\u044e \u0440\u0430\u0431\u043e\u0447\u0443\u044e \u043f\u0430\u043f\u043a\u0443 MOOPI\u2026',
+});
+Object.assign(T.uz, {
+  as_ready: "Tayyorman. Gapiring yoki yozing.", as_listening: "Eshityapman… to‘xtatish uchun yana bosing", as_thinking: "O‘ylayapman…",
+  as_speaking: "Gapiryapman", as_tap_talk: "Gapirish (Ctrl+Alt+M)", as_tap_stop: "To‘xtatish", as_type: "Yoki shu yerga yozing…", as_send: "Yuborish",
+  as_screen: "Ekrandan so‘ra", as_clip: "Nusxalaganimni ber", as_to_claude: "Claude paneliga", as_stop: "To‘xtat", as_new: "Yangi suhbat",
+  as_you: "Siz", as_moopi: "MOOPI", as_no_brain: "Claude Code hali o‘rnatilmagan — yordamchi undan keyin ishlaydi.",
+  as_tool: "{t}", as_image: "Rasm biriktirildi — endi savolingizni ayting yoki yozing", as_hint: "Mikrofonni bosing va gapiring. MOOPI xotirangiz va vositalaringiz bilan, o‘z Claude obunangizda javob beradi.",
+  as_sent_claude: "Claude maydoniga qo‘ying: Ctrl+V (Mac: ⌘V)", as_nothing_heard: "Hech narsa eshitilmadi — yana urinib ko‘ring", as_failed: "Javob bera olmadim. Claude’ga kirganmisiz? Yana urinib ko‘ring.",
+  claude_ready: "Claude Code tayyor", claude_installing: "Claude Code o‘rnatilmoqda (150 MB)…", claude_missing: "Claude Code o‘rnatilmagan", claude_failed: "Claude Code o‘rnatilmadi — internetni tekshirib, qayta urinib ko‘ring",
+  shot_cancelled: "Ekran rasmi olinmadi", voice_tail: " … davomi ekranda.",
+});
+Object.assign(T.ru, {
+  as_ready: "Готов. Говорите или пишите.", as_listening: "Слушаю… нажмите ещё раз, чтобы остановить", as_thinking: "Думаю…",
+  as_speaking: "Говорю", as_tap_talk: "Говорить (Ctrl+Alt+M)", as_tap_stop: "Остановить", as_type: "Или напишите здесь…", as_send: "Отправить",
+  as_screen: "Спросить по экрану", as_clip: "Дать скопированное", as_to_claude: "В панель Claude", as_stop: "Стоп", as_new: "Новый разговор",
+  as_you: "Вы", as_moopi: "MOOPI", as_no_brain: "Claude Code ещё не установлен — помощник заработает после него.",
+  as_tool: "{t}", as_image: "Картинка приложена — теперь задайте вопрос", as_hint: "Нажмите микрофон и говорите. MOOPI отвечает с вашей памятью и инструментами, на вашей подписке Claude.",
+  as_sent_claude: "Вставьте в поле Claude: Ctrl+V (Mac: ⌘V)", as_nothing_heard: "Ничего не услышал — попробуйте ещё", as_failed: "Не смог ответить. Вы вошли в Claude? Попробуйте ещё.",
+  claude_ready: "Claude Code готов", claude_installing: "Claude Code устанавливается (150 МБ)…", claude_missing: "Claude Code не установлен", claude_failed: "Claude Code не установился — проверьте интернет и повторите",
+  shot_cancelled: "Снимок экрана не сделан", voice_tail: " … дальше на экране.",
 });
 function lang() { return vscode.workspace.getConfiguration('moopi').get('language', 'uz') === 'ru' ? 'ru' : 'uz'; }
 function t(key) { return (T[lang()] && T[lang()][key]) || T.uz[key] || key; }
@@ -339,7 +362,12 @@ function stripForSpeech(text) {
 }
 function speak(context, api, text) {
   if (!voice.on || !api.token) return;
-  const say = stripForSpeech(text); if (say.length < 2) return;
+  if (context.globalState.get('moopi.voiceAway') !== false && vscode.window.state.focused) return; // reading it themselves
+  let say = stripForSpeech(text); if (say.length < 2) return;
+  if (context.globalState.get('moopi.voiceShort') !== false && say.length > 520) {
+    const cut = say.slice(0, 520); const end = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '));
+    say = (end > 200 ? cut.slice(0, end + 1) : cut) + t('voice_tail');
+  }
   voice.queue = voice.queue.then(async () => {
     if (!voice.on) return;
     try {
@@ -353,21 +381,13 @@ function speak(context, api, text) {
   });
 }
 function playFile(file) {
-  const cp = require('child_process');
-  return new Promise((resolve) => {
-    let child;
-    if (process.platform === 'darwin') child = cp.spawn('afplay', [file]);
-    else if (process.platform === 'win32') child = cp.spawn('powershell', ['-NoProfile', '-NonInteractive', '-Command', `Add-Type -AssemblyName PresentationCore; $p = New-Object System.Windows.Media.MediaPlayer; $p.Open([Uri]${JSON.stringify(file)}); Start-Sleep -m 300; $p.Play(); while (-not $p.NaturalDuration.HasTimeSpan) { Start-Sleep -m 100 }; Start-Sleep -m ([int]$p.NaturalDuration.TimeSpan.TotalMilliseconds + 300); $p.Close()`]);
-    else child = cp.spawn('sh', ['-c', `mpg123 -q "${file}" || ffplay -nodisp -autoexit -loglevel quiet "${file}"`]);
-    voice.player = child;
-    child.on('exit', () => { voice.player = null; resolve(); });
-    child.on('error', () => { voice.player = null; resolve(); });
-  });
+  const p = platform.play(file); voice.player = p;
+  return p.done.then(() => { voice.player = null; });
 }
 function setVoice(context, on) {
   voice.on = on; context.globalState.update('moopi.voice', on);
   if (voice.api) sendState(context, voice.api);
-  if (!on && voice.player) { try { voice.player.kill(); } catch (e) {} }
+  if (!on && voice.player) { try { voice.player.stop(); } catch (e) {} }
   vscode.window.setStatusBarMessage(t(on ? 'voice_on' : 'voice_off'), 4000);
   vscode.window.showInformationMessage(t(on ? 'voice_on' : 'voice_off'));
 }
@@ -503,15 +523,22 @@ function reportError(context, api, where, e) {
 }
 
 /** Claude Code, from Open VSX, on the first start (the build ships MOOPI's extension; Claude's is theirs). */
-async function ensureClaude(context) {
-  if (vscode.extensions.getExtension('Anthropic.claude-code') || vscode.extensions.getExtension('anthropic.claude-code')) return true;
+let claudeState = 'missing';
+async function ensureClaude(context, api) {
+  if (vscode.extensions.getExtension('Anthropic.claude-code') || vscode.extensions.getExtension('anthropic.claude-code')) { claudeState = 'ready'; if (api) sendState(context, api); return true; }
+  claudeState = 'installing'; if (api) sendState(context, api);
   try {
     await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: t('installing_claude') }, async () => {
       await vscode.commands.executeCommand('workbench.extensions.installExtension', 'anthropic.claude-code');
     });
+    claudeState = 'ready'; if (api) sendState(context, api);
     vscode.window.showInformationMessage(t('claude_installed'));
     return true;
-  } catch (e) { noteError('ensureClaude', e); vscode.window.showWarningMessage(t('no_claude') + ' ' + (e.message || '')); return false; }
+  } catch (e) {
+    claudeState = 'failed'; if (api) sendState(context, api);
+    noteError('ensureClaude', e); vscode.window.showWarningMessage(t('claude_failed') + ' ' + ((e && e.message) || ''));
+    return false;
+  }
 }
 
 /** Claude Code's own panel, in the editor area: the chat in the middle of the MOOPI window. */
@@ -565,13 +592,25 @@ function claudeVersion() {
 function pushToApp(msg) { if (appPanel) appPanel.webview.postMessage({ fromMoopiDesktop: true, ...msg }); }
 function sendState(context, api) {
   pushToApp({ moopi: 'state', platform: process.platform, arch: process.arch, appVersion: vscode.version,
-    extVersion: context.extension.packageJSON.version, claudeVersion: claudeVersion(), voice: !!voice.on,
+    extVersion: context.extension.packageJSON.version, claudeVersion: claudeVersion(), claudeState, voice: !!voice.on,
+    voiceAway: context.globalState.get('moopi.voiceAway') !== false, voiceShort: context.globalState.get('moopi.voiceShort') !== false,
+    assistantVoice: context.globalState.get('moopi.assistantVoice') !== false, brain: !!brain.binary(),
     launchAtLogin: !!context.globalState.get('moopi.launchAtLogin'), hotkey: String(context.globalState.get('moopi.hotkey') || ''),
-    dictation: process.platform === 'win32' ? dictation.state : 'unsupported', lastDictation: dictation.last, updating });
+    dictation: (platform.MAC || platform.WIN) ? dictation.state : 'unsupported', lastDictation: dictation.last,
+    assistant: assistant.current(), updating });
 }
 async function desktopAction(context, api, action, value) {
+  const ctx = assistantContext(context, api);
   if (action === 'voice') setVoice(context, !!value);
+  else if (action === 'voiceAway') await context.globalState.update('moopi.voiceAway', !!value);
+  else if (action === 'voiceShort') await context.globalState.update('moopi.voiceShort', !!value);
+  else if (action === 'assistantVoice') await context.globalState.update('moopi.assistantVoice', !!value);
   else if (action === 'dictate') await toggleDictation(context, api);
+  else if (action === 'talk') await assistant.talk(ctx);
+  else if (action === 'assistant') assistant.open(ctx);
+  else if (action === 'askScreen') await assistant.askScreen(ctx);
+  else if (action === 'askClipboard') await assistant.askClipboard(ctx);
+  else if (action === 'installClaude') { if (await ensureClaude(context, api)) await openClaude(); }
   else if (action === 'launchAtLogin') {
     await context.globalState.update('moopi.launchAtLogin', !!value);
     await applyStartup(context, api);
@@ -586,6 +625,16 @@ async function desktopAction(context, api, action, value) {
     }
   } else if (action === 'sendLogs') await sendLogs(context, api, 'user', false);
   sendState(context, api);
+}
+
+/** What the assistant and the brain need from the window: strings, the API, the log, Claude's panel. */
+function assistantContext(context, api) {
+  return {
+    context, api, t, lang, noteError, openClaude,
+    reportError: (where, e) => reportError(context, api, where, e),
+    sendState: () => sendState(context, api),
+    assistantVoice: () => context.globalState.get('moopi.assistantVoice') !== false,
+  };
 }
 
 /** moopi://moopi.moopi-desktop/signin?code=… — the system browser hands the session over after Google
@@ -652,71 +701,47 @@ async function checkUpdate(context, api, manual) {
   }
 }
 
-/** "Gapirib yozish": Windows records the microphone through the system's own MCI (PowerShell, no extra
- *  programs), MOOPI's speech-to-text (ElevenLabs, Uzbek and Russian) turns it into text, the text goes to the
- *  clipboard and Claude's input is focused — one Ctrl+V. (Claude Code's own dictation has no Uzbek.) Tap to
- *  start, tap again to stop; two minutes at most. Other systems: not yet. */
-const dictation = { state: 'idle', proc: null, stopFile: null, outFile: null, last: '', timer: null };
-const RECORD_PS = `param([string]$Out, [string]$Stop)
-$code = @"
-using System; using System.Text; using System.Runtime.InteropServices;
-public class Mci { [DllImport("winmm.dll", CharSet=CharSet.Unicode)] public static extern int mciSendString(string cmd, StringBuilder ret, int len, IntPtr h); }
-"@
-Add-Type -TypeDefinition $code
-$sb = New-Object System.Text.StringBuilder 256
-[Mci]::mciSendString('open new type waveaudio alias rec', $sb, 256, [IntPtr]::Zero) | Out-Null
-[Mci]::mciSendString('set rec time format ms bitspersample 16 channels 1 samplespersec 16000 bytespersec 32000 alignment 2', $sb, 256, [IntPtr]::Zero) | Out-Null
-$r = [Mci]::mciSendString('record rec', $sb, 256, [IntPtr]::Zero)
-if ($r -ne 0) { [Console]::Error.WriteLine("record failed: $r"); exit 1 }
-$started = Get-Date
-while (-not (Test-Path $Stop)) { Start-Sleep -Milliseconds 200; if (((Get-Date) - $started).TotalSeconds -gt 125) { break } }
-[Mci]::mciSendString('stop rec', $sb, 256, [IntPtr]::Zero) | Out-Null
-[Mci]::mciSendString("save rec \`"$Out\`"", $sb, 256, [IntPtr]::Zero) | Out-Null
-[Mci]::mciSendString('close rec', $sb, 256, [IntPtr]::Zero) | Out-Null
-`;
+/** "Gapirib yozish": the microphone (macOS: MOOPI's own recorder; Windows: the system's MCI through PowerShell —
+ *  nothing to install), MOOPI's speech-to-text (ElevenLabs, Uzbek and Russian), the text onto the clipboard and
+ *  Claude's input focused — one Ctrl+V. Tap to start, tap again to stop; two minutes at most. */
+const dictation = { state: 'idle', rec: null, last: '', timer: null };
+async function transcribeFile(api, file) {
+  const form = new FormData();
+  form.append('file', new Blob([fs.readFileSync(file)], { type: file.endsWith('.wav') ? 'audio/wav' : 'audio/mp4' }), path.basename(file));
+  const r = await fetch(`${api.base}/voice/transcribe`, { method: 'POST', headers: { Authorization: 'Bearer ' + api.token }, body: form });
+  if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + (await r.text()).slice(0, 160));
+  return String((((await r.json()) || {}).text) || '').trim();
+}
 async function toggleDictation(context, api) {
-  if (process.platform !== 'win32') { vscode.window.showInformationMessage(t('dictate_unsupported')); return; }
+  if (!platform.MAC && !platform.WIN) { vscode.window.showInformationMessage(t('dictate_unsupported')); return; }
   if (!api.token) { vscode.window.showWarningMessage(t('signin')); return; }
-  if (dictation.state === 'recording') { try { fs.writeFileSync(dictation.stopFile, 'stop'); } catch (e) {} return; }
+  if (dictation.state === 'recording') return finishDictation(context, api);
   if (dictation.state !== 'idle') return;
-  const tmp = require('os').tmpdir(), stamp = Date.now();
-  dictation.outFile = path.join(tmp, `moopi-dictate-${stamp}.wav`);
-  dictation.stopFile = path.join(tmp, `moopi-dictate-${stamp}.stop`);
-  const script = path.join(tmp, `moopi-record-${stamp}.ps1`);
-  fs.writeFileSync(script, RECORD_PS);
-  dictation.state = 'recording'; sendState(context, api);
-  vscode.window.setStatusBarMessage(t('dictate_recording'), 8000);
-  const cp = require('child_process');
-  let err = '';
-  dictation.proc = cp.spawn('powershell', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', script, '-Out', dictation.outFile, '-Stop', dictation.stopFile], { windowsHide: true });
-  dictation.proc.stderr.on('data', (d) => { err += d; });
-  dictation.timer = setTimeout(() => { try { fs.writeFileSync(dictation.stopFile, 'stop'); } catch (e) {} }, 120000);
-  dictation.proc.on('error', (e) => { err += String(e); });
-  dictation.proc.on('exit', async () => {
-    clearTimeout(dictation.timer); dictation.proc = null;
-    dictation.state = 'working'; sendState(context, api);
-    try {
-      let size = 0; try { size = fs.statSync(dictation.outFile).size; } catch (e) {}
-      if (size < 4000) throw new Error('no audio ' + err.slice(0, 200));
-      const form = new FormData();
-      form.append('file', new Blob([fs.readFileSync(dictation.outFile)], { type: 'audio/wav' }), 'dictate.wav');
-      const r = await fetch(`${api.base}/voice/transcribe`, { method: 'POST', headers: { Authorization: 'Bearer ' + api.token }, body: form });
-      if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + (await r.text()).slice(0, 160));
-      const text = String(((await r.json()) || {}).text || '').trim();
-      if (!text) throw new Error('empty transcript');
-      dictation.last = text.slice(0, 300);
-      await vscode.env.clipboard.writeText(text);
-      await openClaude();
-      try { await vscode.commands.executeCommand('claude-vscode.focus'); } catch (e) {}
-      vscode.window.showInformationMessage(t('dictate_copied'));
-    } catch (e) {
-      reportError(context, api, 'dictate', e);
-      vscode.window.showWarningMessage(t('dictate_failed') + ': ' + ((e && e.message) || e));
-    } finally {
-      for (const f of [dictation.outFile, dictation.stopFile, script]) { try { fs.unlinkSync(f); } catch (e) {} }
-      dictation.state = 'idle'; sendState(context, api);
-    }
-  });
+  try {
+    dictation.rec = platform.startRecording(context.extensionPath, 120);
+    dictation.state = 'recording'; sendState(context, api);
+    vscode.window.setStatusBarMessage(t('dictate_recording'), 8000);
+    dictation.timer = setTimeout(() => finishDictation(context, api).catch(() => {}), 121000);
+  } catch (e) { dictation.state = 'idle'; reportError(context, api, 'dictate', e); vscode.window.showWarningMessage(t('dictate_failed') + ': ' + ((e && e.message) || e)); }
+}
+async function finishDictation(context, api) {
+  const rec = dictation.rec; if (!rec) return;
+  clearTimeout(dictation.timer); dictation.rec = null;
+  dictation.state = 'working'; sendState(context, api);
+  try {
+    const { file } = await rec.stop();
+    const text = await transcribeFile(api, file);
+    try { fs.unlinkSync(file); } catch (e) {}
+    if (!text) throw new Error('empty transcript');
+    dictation.last = text.slice(0, 300);
+    await vscode.env.clipboard.writeText(text);
+    await openClaude();
+    try { await vscode.commands.executeCommand('claude-vscode.focus'); } catch (e) {}
+    vscode.window.showInformationMessage(t('dictate_copied'));
+  } catch (e) {
+    reportError(context, api, 'dictate', e);
+    vscode.window.showWarningMessage(t('dictate_failed') + ': ' + ((e && e.message) || e));
+  } finally { dictation.state = 'idle'; sendState(context, api); }
 }
 
 /** Start with the computer: a shortcut in Windows' Startup folder (its hotkey opens MOOPI Desktop from
@@ -853,6 +878,10 @@ function activate(context) {
     vscode.commands.registerCommand('moopi.voiceToggle', () => setVoice(context, !voice.on)),
     vscode.commands.registerCommand('moopi.dictate', () => toggleDictation(context, api)),
     vscode.commands.registerCommand('moopi.checkUpdate', () => checkUpdate(context, api, true)),
+    vscode.commands.registerCommand('moopi.talk', () => assistant.talk(assistantContext(context, api))),
+    vscode.commands.registerCommand('moopi.assistant', () => assistant.open(assistantContext(context, api))),
+    vscode.commands.registerCommand('moopi.askScreen', () => assistant.askScreen(assistantContext(context, api))),
+    vscode.commands.registerCommand('moopi.askClipboard', () => assistant.askClipboard(assistantContext(context, api))),
   );
   registerUri(context, api);
   // Answers read aloud unless switched off (owner's rule 05.11: everything on; the app's Desktop section has the switch).
@@ -882,7 +911,7 @@ function activate(context) {
     const updates = setInterval(() => checkUpdate(context, api, false), 6 * 3600 * 1000);
     context.subscriptions.push({ dispose: () => clearInterval(updates) });
     try { await vscode.commands.executeCommand('workbench.action.lockEditorGroup'); } catch (e) {}
-    setTimeout(async () => { if (await ensureClaude(context)) { await openClaude(); appPanel && appPanel.reveal(vscode.ViewColumn.One, true); } }, 2500);
+    setTimeout(async () => { if (await ensureClaude(context, api)) { await openClaude(); appPanel && appPanel.reveal(vscode.ViewColumn.One, true); } }, 2500);
   })();
   // Refresh the panels now and then while the window is open; watch MOOPI for new approvals and notes.
   const timer = setInterval(() => { if (api.token) refreshAll(); }, 120000);
