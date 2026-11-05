@@ -1,5 +1,6 @@
 .run/
 vendor/VSCodium.app/
+vendor/MOOPI Desktop.app/
 vendor/*.vsix
 node_modules/
 *.vsix

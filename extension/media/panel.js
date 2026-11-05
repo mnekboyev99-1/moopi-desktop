@@ -54,6 +54,7 @@
     const m = ev.data || {};
     if (m.t) T = m.t;
     if (m.kind === 'signin') signIn();
+    else if (m.kind === 'signinElsewhere') root.innerHTML = `<div class="empty">${esc(T.signin_elsewhere)}</div>`;
     else if (m.kind === 'loading') root.innerHTML = `<div class="hint">${esc(T.loading)}</div>`;
     else if (m.kind === 'codeSent') { const s = root.querySelector('#step2'); if (s) s.hidden = false; const e = root.querySelector('#err'); if (e) { e.className = 'ok'; e.textContent = T.code_sent; } }
     else if (m.kind === 'error') { const e = root.querySelector('#err'); if (e) { e.className = 'err'; e.textContent = m.message; } else root.innerHTML = `<div class="err">${esc(m.message)}</div>`; }

@@ -1,0 +1,6 @@
+{
+  "permissions": { "allow": ["mcp__moopi"] },
+  "enableAllProjectMcpServers": true,
+  "language": "uzbek",
+  "includeCoAuthoredBy": false
+}
