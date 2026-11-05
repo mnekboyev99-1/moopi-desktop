@@ -143,7 +143,7 @@ window.addEventListener('message', (e) => {
 </script></body></html>`;
   appPanel.webview.onDidReceiveMessage(async (m) => {
     try {
-      if (m.moopi === 'ready') return;
+      if (m.moopi === 'ready') { setTimeout(() => openClaude().catch(() => {}), 1500); return; }
       if (m.moopi === 'openClaude') await openClaude();
       else if (m.moopi === 'signedIn' && m.token) {
         if (m.token !== api.token) { api.token = m.token; await context.secrets.store('moopi.token', m.token); try { api.me = await api.get('/auth/me'); } catch (e) {} api.emit(); }
@@ -151,6 +151,7 @@ window.addEventListener('message', (e) => {
     } catch (e) { reportError(context, api, 'appMessage', e); }
   });
   appPanel.onDidDispose(() => { appPanel = null; });
+  appPanel.onDidChangeViewState((e) => { if (e.webviewPanel.active) setTimeout(() => openClaude().catch(() => {}), 300); });
   return appPanel;
 }
 
