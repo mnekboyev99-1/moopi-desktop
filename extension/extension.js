@@ -113,6 +113,70 @@ class Panel {
 let panels = [];
 async function refreshAll() { for (const p of panels) await p.refresh(); }
 
+/** The MOOPI app (its web build, in desktop mode) in the editor area: the window IS the MOOPI app. The
+ *  app hands its sign-in token over and asks for Claude through messages; nothing else crosses. */
+let appPanel = null;
+function appUrl() { return vscode.workspace.getConfiguration('moopi').get('appUrl', 'https://sessions.moopi.uz/app/').replace(/\/?$/, '/'); }
+function openApp(context, api) {
+  if (appPanel) { appPanel.reveal(vscode.ViewColumn.One, true); return appPanel; }
+  const url = appUrl(), origin = new URL(url).origin;
+  appPanel = vscode.window.createWebviewPanel('moopi.app', 'MOOPI', { viewColumn: vscode.ViewColumn.One, preserveFocus: false },
+    { enableScripts: true, retainContextWhenHidden: true, enableForms: true });
+  appPanel.iconPath = vscode.Uri.joinPath(context.extensionUri, 'media', 'moopi.svg');
+  const nonce = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  appPanel.webview.html = `<!doctype html><html><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-src ${origin}; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';">
+<style>html,body{margin:0;height:100%;background:#061210;overflow:hidden}iframe{border:0;width:100%;height:100%;display:block}</style></head>
+<body><iframe id="app" src="${url}?desktop=1" allow="clipboard-read; clipboard-write; microphone" referrerpolicy="origin"></iframe>
+<script nonce="${nonce}">
+const vscode = acquireVsCodeApi();
+window.addEventListener('message', (e) => {
+  if (e.origin === ${JSON.stringify(origin)} && e.data && typeof e.data === 'object' && e.data.moopi) vscode.postMessage(e.data);
+});
+</script></body></html>`;
+  appPanel.webview.onDidReceiveMessage(async (m) => {
+    try {
+      if (m.moopi === 'openClaude') await openClaude();
+      else if (m.moopi === 'signedIn' && m.token) {
+        if (m.token !== api.token) { api.token = m.token; await context.secrets.store('moopi.token', m.token); try { api.me = await api.get('/auth/me'); } catch (e) {} api.emit(); }
+      } else if (m.moopi === 'signedOut') { await api.signOut(); }
+    } catch (e) { reportError(context, api, 'appMessage', e); }
+  });
+  appPanel.onDidDispose(() => { appPanel = null; });
+  return appPanel;
+}
+
+/** The window's shape: no IDE chrome, the MOOPI app in the middle, Claude Code's panel on the right. */
+const LAYOUT = {
+  'workbench.colorTheme': 'MOOPI Dark',
+  'window.title': 'MOOPI Desktop',
+  'window.commandCenter': false,
+  'window.menuBarVisibility': 'compact',
+  'workbench.activityBar.location': 'hidden',
+  'workbench.statusBar.visible': false,
+  'workbench.editor.showTabs': 'none',
+  'workbench.editor.editorActionsLocation': 'hidden',
+  'workbench.layoutControl.enabled': false,
+  'workbench.navigationControl.enabled': false,
+  'workbench.startupEditor': 'none',
+  'workbench.tips.enabled': false,
+  'workbench.secondarySideBar.defaultVisibility': 'visible',
+  'breadcrumbs.enabled': false,
+  'extensions.ignoreRecommendations': true,
+  'security.workspace.trust.enabled': false,
+  'git.enabled': false,
+  'claudeCode.preferredLocation': 'sidebar',
+  'claudeCode.hideOnboarding': true,
+  'claudeCode.continueAfterReload': true,
+};
+async function applyLayout(context) {
+  if (context.globalState.get('moopi.layout') === 3) return;
+  for (const [k, v] of Object.entries(LAYOUT)) {
+    try { await vscode.workspace.getConfiguration().update(k, v, vscode.ConfigurationTarget.Global); } catch (e) {}
+  }
+  await context.globalState.update('moopi.layout', 3);
+}
+
 /** Logs of this window: the extension host's folder (ours and Claude Code's output) and the main logs. */
 const LOGS_URL = 'https://sessions.moopi.uz/api/desktop/logs';
 const ownErrors = [];
@@ -181,7 +245,7 @@ async function openClaude() {
   if (!ext) { vscode.window.showWarningMessage(t('no_claude')); return; }
   if (!ext.isActive) { try { await ext.activate(); } catch (e) {} }
   const commands = await vscode.commands.getCommands(true);
-  for (const c of ['claude-vscode.primaryEditor.open', 'claude-vscode.editor.open', 'claude-vscode.sidebar.open']) {
+  for (const c of ['claude-vscode.sidebar.open', 'claude-vscode.primaryEditor.open', 'claude-vscode.editor.open']) {
     if (commands.includes(c)) { try { await vscode.commands.executeCommand(c); return; } catch (e) {} }
   }
 }
@@ -203,10 +267,15 @@ function activate(context) {
     vscode.commands.registerCommand('moopi.sendLogs', () => sendLogs(context, api, 'user', false)),
   );
   process.on('unhandledRejection', (e) => reportError(context, api, 'unhandledRejection', e));
+  context.subscriptions.push(vscode.commands.registerCommand('moopi.openApp', () => openApp(context, api)));
   api.load().then(() => showStatus());
-  // The MOOPI side first, Claude in the middle once the window has settled.
-  setTimeout(() => { vscode.commands.executeCommand('moopi.bugun.focus').then(() => {}, () => {}); }, 800);
-  setTimeout(async () => { if (await ensureClaude(context)) openClaude(); }, 2500);
+  (async () => {
+    await applyLayout(context);
+    try { await vscode.commands.executeCommand('workbench.action.closeSidebar'); } catch (e) {}
+    openApp(context, api);
+    try { await vscode.commands.executeCommand('workbench.action.lockEditorGroup'); } catch (e) {}
+    setTimeout(async () => { if (await ensureClaude(context)) { await openClaude(); appPanel && appPanel.reveal(vscode.ViewColumn.One, true); } }, 2500);
+  })();
   // Refresh the panels now and then while the window is open.
   const timer = setInterval(() => { if (api.token) refreshAll(); }, 120000);
   context.subscriptions.push({ dispose: () => clearInterval(timer) });

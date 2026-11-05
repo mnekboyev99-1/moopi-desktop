@@ -2,7 +2,7 @@
   "name": "moopi-desktop",
   "displayName": "MOOPI",
   "description": "MOOPI panellari: Bugun, Tasdiqlar, Fayllar — Claude Code bilan bir oynada.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "moopi",
   "license": "UNLICENSED",
   "repository": { "type": "git", "url": "https://github.com/mnekboyev99-1/moopi-desktop" },
@@ -28,7 +28,8 @@
       { "command": "moopi.signOut", "title": "MOOPI: Chiqish" },
       { "command": "moopi.refresh", "title": "MOOPI: Yangilash", "icon": "$(refresh)" },
       { "command": "moopi.openClaude", "title": "MOOPI: Claude bilan suhbat", "icon": "$(sparkle)" },
-      { "command": "moopi.sendLogs", "title": "MOOPI: Xatoni yuborish (jurnal)", "icon": "$(bug)" }
+      { "command": "moopi.sendLogs", "title": "MOOPI: Xatoni yuborish (jurnal)", "icon": "$(bug)" },
+      { "command": "moopi.openApp", "title": "MOOPI: Ilovani ochish" }
     ],
     "menus": {
       "view/title": [
@@ -40,7 +41,8 @@
     "configuration": {
       "title": "MOOPI",
       "properties": {
-        "moopi.apiUrl": { "type": "string", "default": "https://moopi.uz/api", "description": "MOOPI API manzili." },
+        "moopi.apiUrl": { "type": "string", "default": "https://sessions.moopi.uz/moopi-api", "description": "MOOPI API manzili." },
+        "moopi.appUrl": { "type": "string", "default": "https://sessions.moopi.uz/app/", "description": "MOOPI ilovasining veb manzili (oynaning o'rtasida ochiladi)." },
         "moopi.language": { "type": "string", "enum": ["uz", "ru"], "default": "uz", "description": "Panellar tili." }
       }
     },
