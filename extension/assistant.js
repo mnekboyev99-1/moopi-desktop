@@ -36,7 +36,7 @@ function open(ctx, reveal) {
 }
 function strings(ctx) {
   const keys = ['as_ready', 'as_listening', 'as_thinking', 'as_speaking', 'as_tap_talk', 'as_tap_stop', 'as_type', 'as_send', 'as_screen', 'as_clip',
-    'as_to_claude', 'as_stop', 'as_new', 'as_you', 'as_moopi', 'as_no_brain', 'as_tool', 'as_image', 'as_hint', 'as_sent_claude', 'as_nothing_heard', 'as_need_mic', 'as_need_screen', 'as_too_short'];
+    'as_to_claude', 'as_stop', 'as_new', 'as_you', 'as_moopi', 'as_no_brain', 'as_tool', 'as_image', 'as_hint', 'as_sent_claude', 'as_nothing_heard', 'as_need_mic', 'as_need_screen', 'as_too_short', 'as_open_window'];
   const out = {}; for (const k of keys) out[k] = ctx.t(k); return out;
 }
 
@@ -211,6 +211,21 @@ function stopSpeaking() {
   if (state.phase === 'speaking') phase('idle');
 }
 
+/** A line from a background job (a watched folder, a quick action) into the window — opened for a quick action,
+ *  left as it is for a watched folder (a notification carries that) — and, when final, into the voice. */
+function report(ctx, kind, text, tool, final, asUser) {
+  if (kind === 'quick') open(ctx, true);
+  if (tool) post({ kind: 'tool', text: say(ctx, 'as_tool', { t: tool.replace(/^mcp__moopi__/, 'MOOPI · ') }) });
+  if (text && asUser) { post({ kind: 'you', text }); return; }
+  if (text) {
+    post({ kind: 'moopi', text, append: true });
+    if (final) {
+      post({ kind: 'moopi', text: '', final: true });
+      if (kind === 'watch' || kind === 'briefing') { vscode.window.showInformationMessage(text.slice(0, 300), ctx.t('as_open_window')).then((pick) => { if (pick) open(ctx, true); }); ctx.osNotify('MOOPI', text.slice(0, 160)); }
+      speak(ctx, text);
+    }
+  } else if (final) post({ kind: 'moopi', text: '', final: true });
+}
 function listening() { return !!state.listening; }
 function current() { return state.phase; }
-module.exports = { open, talk, askText, askScreen, askClipboard, stopSpeaking, sendToClaude, listening, current };
+module.exports = { open, talk, askText, askScreen, askClipboard, stopSpeaking, sendToClaude, listening, current, report };

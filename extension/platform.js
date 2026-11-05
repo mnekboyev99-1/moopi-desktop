@@ -157,4 +157,62 @@ function openPrivacy(which) {
   const pane = which === 'mic' ? 'Privacy_Microphone' : 'Privacy_ScreenCapture';
   cp.execFile('/usr/bin/open', [`x-apple.systempreferences:com.apple.preference.security?${pane}`], () => {});
 }
-module.exports = { WIN, MAC, startRecording, screenshot, clipboardImage, copyImage, play, activateWindow, openPrivacy, ps, run };
+// ---------- Windows: "MOOPI'ga yuborish" in Explorer's right-click menu (the current user's registry, no admin) ----------
+async function explorerMenu(enable, label, dest) {
+  if (!WIN) return;
+  if (!enable) {
+    await ps("Remove-Item -Path 'HKCU:\\Software\\Classes\\*\\shell\\MOOPI' -Recurse -ErrorAction SilentlyContinue");
+    return;
+  }
+  const cmd = `powershell -NoProfile -WindowStyle Hidden -Command "Copy-Item -LiteralPath '%1' -Destination '${dest.replace(/'/g, "''")}'"`;
+  await ps(`$k = 'HKCU:\\Software\\Classes\\*\\shell\\MOOPI'
+New-Item -Path $k -Force | Out-Null
+Set-ItemProperty -Path $k -Name '(Default)' -Value $args[0]
+Set-ItemProperty -Path $k -Name 'Icon' -Value $args[1]
+New-Item -Path "$k\\command" -Force | Out-Null
+Set-ItemProperty -Path "$k\\command" -Name '(Default)' -Value $args[2]`, [label, process.execPath + ',0', cmd]);
+}
+
+// ---------- Windows: a key that works everywhere (RegisterHotKey in a hidden window), reported through a file ----------
+const HOTKEY_PS = `param([int]$Mod, [int]$Key, [string]$Trigger)
+Add-Type -AssemblyName System.Windows.Forms
+$code = @"
+using System; using System.Runtime.InteropServices; using System.Windows.Forms;
+public class MoopiHotkey : Form {
+  [DllImport("user32.dll")] public static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
+  [DllImport("user32.dll")] public static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+  public string Trigger; public int Mod; public int Key;
+  protected override void OnLoad(EventArgs e) { base.OnLoad(e); this.ShowInTaskbar = false; this.WindowState = FormWindowState.Minimized; this.Visible = false;
+    if (!RegisterHotKey(this.Handle, 1, (uint)Mod, (uint)Key)) { Console.Error.WriteLine("hotkey taken"); Environment.Exit(2); } }
+  protected override void WndProc(ref Message m) { if (m.Msg == 0x0312) { try { System.IO.File.WriteAllText(Trigger, DateTime.UtcNow.Ticks.ToString()); } catch {} } base.WndProc(ref m); }
+  protected override void OnFormClosed(FormClosedEventArgs e) { UnregisterHotKey(this.Handle, 1); base.OnFormClosed(e); }
+}
+"@
+Add-Type -TypeDefinition $code -ReferencedAssemblies System.Windows.Forms
+$f = New-Object MoopiHotkey; $f.Trigger = $Trigger; $f.Mod = $Mod; $f.Key = $Key
+[System.Windows.Forms.Application]::Run($f)
+`;
+const MODS = { ctrl: 2, alt: 1, shift: 4, win: 8 };
+/** "Ctrl+Alt+M" → {mod, key}; null when it is not a key we can register. */
+function parseHotkey(text) {
+  const parts = String(text || '').toLowerCase().split('+').map((x) => x.trim()).filter(Boolean);
+  if (parts.length < 2) return null;
+  const key = parts.pop(); let mod = 0;
+  for (const m of parts) { if (!(m in MODS)) return null; mod |= MODS[m]; }
+  if (!/^[a-z0-9]$/.test(key) && key !== 'space') return null;
+  const vk = key === 'space' ? 0x20 : key.toUpperCase().charCodeAt(0);
+  return { mod: mod | 0x4000, key: vk }; // 0x4000: MOD_NOREPEAT
+}
+/** Starts the helper; onPress() each time the key is pressed anywhere. Returns {stop}. Windows only. */
+function startHotkey(text, onPress) {
+  if (!WIN) return null;
+  const hk = parseHotkey(text); if (!hk) return null;
+  const script = path.join(tmp(), 'moopi-hotkey.ps1'), trigger = path.join(tmp(), 'moopi-hotkey.trigger');
+  fs.writeFileSync(script, HOTKEY_PS);
+  try { fs.unlinkSync(trigger); } catch (e) {}
+  const child = cp.spawn('powershell', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', script, '-Mod', String(hk.mod), '-Key', String(hk.key), '-Trigger', trigger], { windowsHide: true });
+  let last = '';
+  const poll = setInterval(() => { try { const v = fs.readFileSync(trigger, 'utf8'); if (v && v !== last) { last = v; onPress(); } } catch (e) {} }, 250);
+  return { stop: () => { clearInterval(poll); try { child.kill(); } catch (e) {} try { fs.unlinkSync(trigger); } catch (e) {} } };
+}
+module.exports = { WIN, MAC, startRecording, screenshot, clipboardImage, copyImage, play, activateWindow, openPrivacy, explorerMenu, startHotkey, parseHotkey, ps, run };

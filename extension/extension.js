@@ -5,6 +5,8 @@ const vscode = require('vscode');
 const brain = require('./brain');
 const platform = require('./platform');
 const assistant = require('./assistant');
+const watch = require('./watch');
+const quick = require('./quick');
 const fs = require('fs');
 const path = require('path');
 
@@ -62,6 +64,10 @@ Object.assign(T.uz, {
   as_need_mic: "Mac mikrofonga ruxsat bermagan. Ochilgan oynada MOOPI Desktop (yoki VSCodium) ni yoqing va dasturni qayta oching.",
   as_need_screen: "Mac ekranni olishga ruxsat bermagan. Ochilgan oynada «Ekranni yozib olish» ro'yxatida MOOPI Desktop (yoki VSCodium) ni yoqing va dasturni qayta oching.",
   as_too_short: "Juda qisqa — tugmani bosib, gapirib bo'lgach yana bosing.",
+  as_open_window: "Oynani ochish", watch_pick: "Kuzatish", watch_reading: "MOOPI o'qiyapti: {f}", watch_failed: "O'qib bo'lmadi: {f}",
+  quick_busy: "MOOPI hozir band — biroz kuting.", quick_done: "Tayyor: {f} — ochildi, tayyor/ papkasida.", quick_nothing: "Bajarildi.",
+  quick_failed: "Bajarib bo'lmadi — yana urinib ko'ring.", briefing_title: "Ertalabki brifing", explorer_on: "Explorer menyusiga qo'shildi: «MOOPI'ga yuborish»",
+  explorer_off: "Explorer menyusidan olib tashlandi", hotkey_taken: "Bu tugma band — boshqasini tanlang",
 });
 Object.assign(T.ru, {
   as_ready: "Готов. Говорите или пишите.", as_listening: "Слушаю… нажмите ещё раз, чтобы остановить", as_thinking: "Думаю…",
@@ -75,6 +81,10 @@ Object.assign(T.ru, {
   as_need_mic: "Mac не дал доступ к микрофону. В открывшемся окне включите MOOPI Desktop (или VSCodium) и перезапустите программу.",
   as_need_screen: "Mac не дал доступ к записи экрана. В открывшемся окне в списке «Запись экрана» включите MOOPI Desktop (или VSCodium) и перезапустите программу.",
   as_too_short: "Слишком коротко — нажмите, скажите и нажмите ещё раз.",
+  as_open_window: "Открыть окно", watch_pick: "Отслеживать", watch_reading: "MOOPI читает: {f}", watch_failed: "Не удалось прочитать: {f}",
+  quick_busy: "MOOPI сейчас занят — подождите.", quick_done: "Готово: {f} — открыто, лежит в tayyor/.", quick_nothing: "Выполнено.",
+  quick_failed: "Не удалось — попробуйте ещё.", briefing_title: "Утренний брифинг", explorer_on: "Добавлено в меню Explorer: «Отправить в MOOPI»",
+  explorer_off: "Убрано из меню Explorer", hotkey_taken: "Эта клавиша занята — выберите другую",
 });
 function lang() { return vscode.workspace.getConfiguration('moopi').get('language', 'uz') === 'ru' ? 'ru' : 'uz'; }
 function t(key) { return (T[lang()] && T[lang()][key]) || T.uz[key] || key; }
@@ -603,7 +613,9 @@ function sendState(context, api) {
     assistantVoice: context.globalState.get('moopi.assistantVoice') !== false, brain: !!brain.binary(),
     launchAtLogin: !!context.globalState.get('moopi.launchAtLogin'), hotkey: String(context.globalState.get('moopi.hotkey') || ''),
     dictation: (platform.MAC || platform.WIN) ? dictation.state : 'unsupported', lastDictation: dictation.last,
-    assistant: assistant.current(), updating });
+    assistant: assistant.current(), updating,
+    watchFolders: watch.folders(context), quickActions: quick.list(context, (api.me && api.me.language) || lang()),
+    briefingAloud: context.globalState.get('moopi.briefingAloud') !== false, explorerMenu: !!context.globalState.get('moopi.explorerMenu') });
 }
 async function desktopAction(context, api, action, value) {
   const ctx = assistantContext(context, api);
@@ -626,21 +638,35 @@ async function desktopAction(context, api, action, value) {
     if (k && !/^((ctrl|alt|shift)\+){1,3}[a-z0-9]$/i.test(k)) vscode.window.showWarningMessage(t('hotkey_bad'));
     else {
       await context.globalState.update('moopi.hotkey', k);
-      await applyStartup(context, api);
+      armHotkey(context, api);
       vscode.window.showInformationMessage(k ? t('hotkey_set').replace('{k}', k) : t('hotkey_cleared'));
     }
   } else if (action === 'sendLogs') await sendLogs(context, api, 'user', false);
+  else if (action === 'watchAdd') await watch.add(context, ctx);
+  else if (action === 'watchRemove') await watch.remove(context, ctx, String(value || ''));
+  else if (action === 'quickRun') quick.run(context, ctx, String(value || '')).catch((e) => reportError(context, api, 'quick', e));
+  else if (action === 'quickAdd' && value && typeof value === 'object') await quick.addAction(context, (api.me && api.me.language) || lang(), value.title, value.prompt);
+  else if (action === 'quickRemove') await quick.removeAction(context, (api.me && api.me.language) || lang(), String(value || ''));
+  else if (action === 'briefingAloud') await context.globalState.update('moopi.briefingAloud', !!value);
+  else if (action === 'explorerMenu') {
+    await context.globalState.update('moopi.explorerMenu', !!value);
+    try { await platform.explorerMenu(!!value, lang() === 'ru' ? 'Отправить в MOOPI' : "MOOPI'ga yuborish", path.join(WORKSPACE_DIR, 'fayllar')); vscode.window.showInformationMessage(t(value ? 'explorer_on' : 'explorer_off')); }
+    catch (e) { reportError(context, api, 'explorerMenu', e); }
+  }
   sendState(context, api);
 }
 
 /** What the assistant and the brain need from the window: strings, the API, the log, Claude's panel. */
 function assistantContext(context, api) {
-  return {
+  const ctx = {
     context, api, t, lang, noteError, openClaude,
     reportError: (where, e) => reportError(context, api, where, e),
     sendState: () => sendState(context, api),
     assistantVoice: () => context.globalState.get('moopi.assistantVoice') !== false,
+    osNotify,
   };
+  ctx.onReport = (kind, text, tool, final, asUser) => assistant.report(ctx, kind, text, tool, final, asUser);
+  return ctx;
 }
 
 /** moopi://moopi.moopi-desktop/signin?code=… — the system browser hands the session over after Google
@@ -762,15 +788,14 @@ function execPowershell(script) {
 }
 async function applyStartup(context, api) {
   const on = !!context.globalState.get('moopi.launchAtLogin');
-  const hotkey = String(context.globalState.get('moopi.hotkey') || '');
   try {
     if (process.platform === 'win32') {
       const menu = path.join(process.env.APPDATA || '', 'Microsoft', 'Windows', 'Start Menu', 'Programs');
       const startup = path.join(menu, 'Startup', 'MOOPI Desktop.lnk'), programs = path.join(menu, 'MOOPI Desktop (tezkor).lnk');
-      const target = on ? startup : (hotkey ? programs : '');
+      const target = on ? startup : '';
       await execPowershell(`$w = New-Object -ComObject WScript.Shell
 foreach ($p in @(${psQuote(startup)}, ${psQuote(programs)})) { if (Test-Path $p) { Remove-Item $p -Force } }
-if (${psQuote(target)} -ne '') { $s = $w.CreateShortcut(${psQuote(target)}); $s.TargetPath = ${psQuote(process.execPath)}; $s.WorkingDirectory = ${psQuote(path.dirname(process.execPath))}; if (${psQuote(hotkey)} -ne '') { $s.Hotkey = ${psQuote(hotkey)} }; $s.Save() }`);
+if (${psQuote(target)} -ne '') { $s = $w.CreateShortcut(${psQuote(target)}); $s.TargetPath = ${psQuote(process.execPath)}; $s.WorkingDirectory = ${psQuote(path.dirname(process.execPath))}; $s.Save() }`);
     } else if (process.platform === 'darwin') {
       const plist = path.join(require('os').homedir(), 'Library', 'LaunchAgents', 'uz.moopi.desktop.plist');
       const cp = require('child_process');
@@ -866,6 +891,30 @@ function sweepTranscripts(context, api) {
   if (transcripts.pending.size) syncTranscript(context, api, [...transcripts.pending][0]);
 }
 
+/** Windows: the talk key works from any program (platform.startHotkey); a press brings the window up and listens. */
+let hotkeyHelper = null;
+function armHotkey(context, api) {
+  if (hotkeyHelper) { hotkeyHelper.stop(); hotkeyHelper = null; }
+  if (!platform.WIN) return;
+  const key = context.globalState.get('moopi.hotkey') === undefined ? 'Ctrl+Alt+M' : String(context.globalState.get('moopi.hotkey') || '');
+  if (!key) return;
+  hotkeyHelper = platform.startHotkey(key, () => { platform.activateWindow('MOOPI Desktop'); assistant.talk(assistantContext(context, api)).catch((e) => reportError(context, api, 'hotkey', e)); });
+}
+
+/** The morning briefing, spoken once a day when MOOPI Desktop comes up (after 06:00, if there is one for today). */
+async function speakBriefing(context, api) {
+  if (!api.token || context.globalState.get('moopi.briefingAloud') === false) return;
+  const today = new Date().toISOString().slice(0, 10);
+  if (new Date().getHours() < 6 || context.globalState.get('moopi.briefingSpokenOn') === today) return;
+  try {
+    const d = await api.get('/today');
+    const b = d && d.briefing;
+    if (!b || !b.is_today || !b.text) return;
+    await context.globalState.update('moopi.briefingSpokenOn', today);
+    assistant.report(assistantContext(context, api), 'briefing', `${t('briefing_title')}: ${String(b.text).slice(0, 1500)}`, null, true);
+  } catch (e) { noteError('briefing', e); }
+}
+
 function activate(context) {
   const api = new Api(context);
   panels = ['bugun', 'tasdiqlar', 'fayllar'].map((id) => new Panel(id, api, context));
@@ -914,6 +963,11 @@ function activate(context) {
     ping(context, api).catch(() => {});
     context.subscriptions.push(api.onChange(() => { if (api.token) { pingedAt = 0; ping(context, api).catch(() => {}); } }));
     setTimeout(() => checkUpdate(context, api, false), 20000);
+    watch.start(context, assistantContext(context, api));
+    armHotkey(context, api);
+    context.subscriptions.push({ dispose: () => { watch.stop(); if (hotkeyHelper) hotkeyHelper.stop(); } });
+    setTimeout(() => speakBriefing(context, api), 12000);
+    context.subscriptions.push(api.onChange(() => { if (api.token) setTimeout(() => speakBriefing(context, api), 5000); }));
     const updates = setInterval(() => checkUpdate(context, api, false), 6 * 3600 * 1000);
     context.subscriptions.push({ dispose: () => clearInterval(updates) });
     try { await vscode.commands.executeCommand('workbench.action.lockEditorGroup'); } catch (e) {}

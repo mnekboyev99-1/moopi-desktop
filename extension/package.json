@@ -2,7 +2,7 @@
   "name": "moopi-desktop",
   "displayName": "MOOPI",
   "description": "MOOPI panellari: Bugun, Tasdiqlar, Fayllar — Claude Code bilan bir oynada.",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "publisher": "moopi",
   "license": "UNLICENSED",
   "repository": {
