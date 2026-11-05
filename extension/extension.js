@@ -320,13 +320,16 @@ const LAYOUT = {
   'claudeCode.preferredLocation': 'sidebar',
   'claudeCode.hideOnboarding': true,
   'claudeCode.continueAfterReload': true,
+  // Focus view: only the person's messages and Claude's answers; tool calls fold away (one click to see).
+  'claudeCode.focusView': true,
+  'claudeCode.spinnerVerbs': { mode: 'replace', verbs: ["O'ylayapman", "Qarab chiqyapman", "Tayyorlayapman", "Tekshiryapman", "Yozyapman"] },
 };
 async function applyLayout(context) {
-  if (context.globalState.get('moopi.layout') === 3) return;
+  if (context.globalState.get('moopi.layout') === 4) return;
   for (const [k, v] of Object.entries(LAYOUT)) {
     try { await vscode.workspace.getConfiguration().update(k, v, vscode.ConfigurationTarget.Global); } catch (e) {}
   }
-  await context.globalState.update('moopi.layout', 3);
+  await context.globalState.update('moopi.layout', 4);
 }
 
 /** Logs of this window: the extension host's folder (ours and Claude Code's output) and the main logs. */

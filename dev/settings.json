@@ -28,5 +28,16 @@
   "claudeCode.hideOnboarding": true,
   "claudeCode.lockEditorGroups": true,
   "claudeCode.initialPermissionMode": "default",
-  "claudeCode.continueAfterReload": true
+  "claudeCode.continueAfterReload": true,
+  "claudeCode.focusView": true,
+  "claudeCode.spinnerVerbs": {
+    "mode": "replace",
+    "verbs": [
+      "O'ylayapman",
+      "Qarab chiqyapman",
+      "Tayyorlayapman",
+      "Tekshiryapman",
+      "Yozyapman"
+    ]
+  }
 }
