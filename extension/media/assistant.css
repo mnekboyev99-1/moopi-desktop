@@ -1,5 +1,6 @@
 :root { --bg: #061210; --surface: #0B1A16; --ink: #E8FFF7; --muted: #A9C6BD; --accent: #00C8A4; --accent-2: #7FF5DA; --me: #0B7A63; --bubble: #16302A; --danger: #FF6B6B; }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { height: 100%; margin: 0; }
 body { background: var(--bg); color: var(--ink); font: 15px/1.5 -apple-system, "Segoe UI", Inter, Roboto, sans-serif; overflow: hidden; }
 #root { display: flex; flex-direction: column; height: 100vh; }

@@ -60,6 +60,8 @@ function startRecording(extensionPath, maxSec) {
   } else {
     throw new Error('recording: unsupported platform');
   }
+  let out = '';
+  child.stdout.on('data', (d) => { out += d; });
   child.stderr.on('data', (d) => { err += d; });
   const exited = new Promise((resolve) => { child.on('exit', resolve); child.on('error', (e) => { err += String(e); resolve(1); }); });
   return {
@@ -69,8 +71,10 @@ function startRecording(extensionPath, maxSec) {
       await exited;
       try { fs.unlinkSync(stopFile); } catch (e) {}
       let size = 0; try { size = fs.statSync(file).size; } catch (e) {}
+      if (/microphone denied/.test(err)) { const e = new Error('microphone denied'); e.code = 'mic'; throw e; }
       if (size < 3000) throw new Error('no audio' + (err ? ': ' + err.replace(/\s+/g, ' ').slice(0, 200) : ''));
-      return { file, size };
+      const seconds = Number((out.match(/ok (\d+)s/) || [])[1] || 0);
+      return { file, size, seconds };
     },
     cancel: () => { try { fs.writeFileSync(stopFile, 'stop'); } catch (e) {} },
   };
@@ -81,7 +85,8 @@ async function screenshot(dir) {
   fs.mkdirSync(dir, { recursive: true });
   const file = path.join(dir, `ekran-${stamp()}.png`);
   if (MAC) {
-    await run('/usr/sbin/screencapture', ['-i', '-x', file]); // -i: a region by hand, Esc cancels; -x: no sound
+    try { await run('/usr/sbin/screencapture', ['-i', '-x', file]); } // -i: a region by hand, Esc cancels; -x: no sound
+    catch (e) { if (/could not create image/i.test(String(e.message))) { const d = new Error('screen recording not allowed'); d.code = 'screen'; throw d; } throw e; }
     return fs.existsSync(file) ? file : null;
   }
   if (WIN) {
@@ -146,4 +151,10 @@ function activateWindow(appName) {
   } catch (e) {}
 }
 
-module.exports = { WIN, MAC, startRecording, screenshot, clipboardImage, copyImage, play, activateWindow, ps, run };
+/** The system's privacy pane for the microphone or the screen (macOS), so the person can allow MOOPI Desktop. */
+function openPrivacy(which) {
+  if (!MAC) return;
+  const pane = which === 'mic' ? 'Privacy_Microphone' : 'Privacy_ScreenCapture';
+  cp.execFile('/usr/bin/open', [`x-apple.systempreferences:com.apple.preference.security?${pane}`], () => {});
+}
+module.exports = { WIN, MAC, startRecording, screenshot, clipboardImage, copyImage, play, activateWindow, openPrivacy, ps, run };

@@ -36,7 +36,7 @@ function open(ctx, reveal) {
 }
 function strings(ctx) {
   const keys = ['as_ready', 'as_listening', 'as_thinking', 'as_speaking', 'as_tap_talk', 'as_tap_stop', 'as_type', 'as_send', 'as_screen', 'as_clip',
-    'as_to_claude', 'as_stop', 'as_new', 'as_you', 'as_moopi', 'as_no_brain', 'as_tool', 'as_image', 'as_hint', 'as_sent_claude', 'as_nothing_heard'];
+    'as_to_claude', 'as_stop', 'as_new', 'as_you', 'as_moopi', 'as_no_brain', 'as_tool', 'as_image', 'as_hint', 'as_sent_claude', 'as_nothing_heard', 'as_need_mic', 'as_need_screen', 'as_too_short'];
   const out = {}; for (const k of keys) out[k] = ctx.t(k); return out;
 }
 
@@ -71,13 +71,18 @@ async function finishListening(ctx) {
   state.listening = null; clearTimeout(state.autoStop);
   phase('thinking', ctx.t('as_thinking'));
   ctx.sendState();
-  let text = '';
+  let text = '', seconds = 0;
   try {
-    const { file } = await rec.stop();
-    text = await transcribe(ctx, file);
-    try { fs.unlinkSync(file); } catch (e) {}
-  } catch (e) { phase('idle'); ctx.reportError('listen', e); post({ kind: 'error', text: ctx.t('as_nothing_heard') }); return; }
-  if (!text) { phase('idle'); post({ kind: 'error', text: ctx.t('as_nothing_heard') }); return; }
+    const got = await rec.stop(); seconds = got.seconds || 0;
+    text = await transcribe(ctx, got.file);
+    try { fs.unlinkSync(got.file); } catch (e) {}
+  } catch (e) {
+    phase('idle'); ctx.reportError('listen', e);
+    if (e && e.code === 'mic') { post({ kind: 'error', text: ctx.t('as_need_mic') }); platform.openPrivacy('mic'); }
+    else post({ kind: 'error', text: ctx.t('as_nothing_heard') });
+    return;
+  }
+  if (!text) { phase('idle'); ctx.noteError('listen', 'empty transcript after ' + seconds + ' s'); post({ kind: 'error', text: seconds < 1 ? ctx.t('as_too_short') : ctx.t('as_nothing_heard') }); return; }
   await askText(ctx, text, { spoken: true });
 }
 async function transcribe(ctx, file) {
@@ -139,7 +144,11 @@ async function askScreen(ctx) {
     state.pendingImage = file;
     post({ kind: 'image', uri: state.panel.webview.asWebviewUri(vscode.Uri.file(file)).toString(), text: ctx.t('as_image') });
     state.panel.reveal(vscode.ViewColumn.Two, false);
-  } catch (e) { ctx.reportError('screen', e); post({ kind: 'error', text: String((e && e.message) || e) }); }
+  } catch (e) {
+    ctx.reportError('screen', e);
+    if (e && e.code === 'screen') { post({ kind: 'error', text: ctx.t('as_need_screen') }); platform.openPrivacy('screen'); }
+    else post({ kind: 'error', text: ctx.t('shot_cancelled') });
+  }
 }
 async function askClipboard(ctx) {
   open(ctx, false);
