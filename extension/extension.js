@@ -12,6 +12,7 @@ const T = {
         approve: 'Tasdiqlash', reject: 'Rad etish', open: 'Ochish', overdue: 'muddati o‘tgan', today_tasks: 'Bugungi ishlar',
         briefing: 'Ertalabki brifing', recent: 'Oxirgi suhbatlar', loading: 'Yuklanmoqda…', signed_out: 'Chiqdingiz', hello: 'Salom',
         claude: 'Claude bilan suhbat', no_claude: 'Claude Code kengaytmasi topilmadi.', signin_elsewhere: 'Kirish \u2014 "Bugun" panelida.',
+        file_ready: 'Fayl Claude uchun tayyor: {m} \u2014 yozish maydoniga qo\u2018ying (Cmd+V / Ctrl+V).', go_claude: 'Claude\u2019ga o\u2018tish', file_failed: 'Faylni olib bo\u2018lmadi', approvals_waiting: '{n} ta tasdiq kutmoqda', open_approvals: 'Tasdiqlarni ochish',
         send_logs: 'Xatoni yuborish', logs_sent: 'Jurnal MOOPI\u2019ga yuborildi, rahmat.', logs_failed: 'Jurnalni yuborib bo\u2018lmadi', installing_claude: 'Claude Code o\u2018rnatilmoqda\u2026', claude_installed: 'Claude Code o\u2018rnatildi.' },
   ru: { signin: 'Войдите в аккаунт MOOPI', email: 'Email', code: '6-значный код', send_code: 'Отправить код', enter: 'Войти',
         tg_hint: 'Отправьте боту @moopiai свой номер и введите код.', tg: 'Через Telegram', mail: 'По email',
@@ -19,6 +20,7 @@ const T = {
         approve: 'Одобрить', reject: 'Отклонить', open: 'Открыть', overdue: 'просрочено', today_tasks: 'Дела на сегодня',
         briefing: 'Утренний брифинг', recent: 'Недавние разговоры', loading: 'Загрузка…', signed_out: 'Вы вышли', hello: 'Привет',
         claude: 'Разговор с Claude', no_claude: 'Расширение Claude Code не найдено.', signin_elsewhere: '\u0412\u0445\u043e\u0434 \u2014 \u0432 \u043f\u0430\u043d\u0435\u043b\u0438 \u00ab\u0411\u0443\u0433\u0443\u043d\u00bb.',
+        file_ready: '\u0424\u0430\u0439\u043b \u0433\u043e\u0442\u043e\u0432 \u0434\u043b\u044f Claude: {m} \u2014 \u0432\u0441\u0442\u0430\u0432\u044c\u0442\u0435 \u0432 \u043f\u043e\u043b\u0435 \u0432\u0432\u043e\u0434\u0430 (Cmd+V / Ctrl+V).', go_claude: '\u041f\u0435\u0440\u0435\u0439\u0442\u0438 \u043a Claude', file_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0444\u0430\u0439\u043b', approvals_waiting: '{n} \u0437\u0430\u043f\u0440\u043e\u0441\u043e\u0432 \u0436\u0434\u0443\u0442 \u043e\u0434\u043e\u0431\u0440\u0435\u043d\u0438\u044f', open_approvals: '\u041e\u0442\u043a\u0440\u044b\u0442\u044c \u043e\u0434\u043e\u0431\u0440\u0435\u043d\u0438\u044f',
         send_logs: '\u041e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u043e\u0442\u0447\u0451\u0442 \u043e\u0431 \u043e\u0448\u0438\u0431\u043a\u0435', logs_sent: '\u0416\u0443\u0440\u043d\u0430\u043b \u043e\u0442\u043f\u0440\u0430\u0432\u043b\u0435\u043d \u0432 MOOPI, \u0441\u043f\u0430\u0441\u0438\u0431\u043e.', logs_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u0436\u0443\u0440\u043d\u0430\u043b', installing_claude: '\u0423\u0441\u0442\u0430\u043d\u043e\u0432\u043a\u0430 Claude Code\u2026', claude_installed: 'Claude Code \u0443\u0441\u0442\u0430\u043d\u043e\u0432\u043b\u0435\u043d.' },
 };
 function lang() { return vscode.workspace.getConfiguration('moopi').get('language', 'uz') === 'ru' ? 'ru' : 'uz'; }
@@ -145,6 +147,7 @@ window.addEventListener('message', (e) => {
     try {
       if (m.moopi === 'ready') { setTimeout(() => openClaude().catch(() => {}), 1500); return; }
       if (m.moopi === 'openClaude') await openClaude();
+      else if (m.moopi === 'giveFile') await giveFile(context, api, m.id, m.name);
       else if (m.moopi === 'signedIn' && m.token) {
         if (m.token !== api.token) { api.token = m.token; await context.secrets.store('moopi.token', m.token); try { api.me = await api.get('/auth/me'); } catch (e) {} api.emit(); }
       } else if (m.moopi === 'signedOut') { await api.signOut(); }
@@ -153,6 +156,77 @@ window.addEventListener('message', (e) => {
   appPanel.onDidDispose(() => { appPanel = null; });
   appPanel.onDidChangeViewState((e) => { if (e.webviewPanel.active) setTimeout(() => openClaude().catch(() => {}), 300); });
   return appPanel;
+}
+
+/** A MOOPI file handed to Claude: downloaded into the workspace (~/MOOPI/fayllar), its @-mention put on the
+ *  clipboard (Claude's input box is Anthropic's; it cannot be typed into from here), text files also opened
+ *  so the panel attaches them by itself. */
+async function giveFile(context, api, id, name) {
+  const folder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
+  if (!folder || !api.token) { vscode.window.showWarningMessage(t('file_failed')); return; }
+  const safe = String(name || ('fayl-' + id)).replace(/[\/\\:*?"<>|]+/g, '_').slice(-120);
+  const dir = vscode.Uri.joinPath(folder.uri, 'fayllar'), target = vscode.Uri.joinPath(dir, safe);
+  try {
+    const r = await fetch(`${api.base}/files/${id}`, { headers: { Authorization: 'Bearer ' + api.token } });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const bytes = new Uint8Array(await r.arrayBuffer());
+    await vscode.workspace.fs.createDirectory(dir);
+    await vscode.workspace.fs.writeFile(target, bytes);
+    const mention = '@fayllar/' + safe;
+    await vscode.env.clipboard.writeText(mention + ' ');
+    if (/\.(txt|md|csv|json|html|xml|yaml|yml)$/i.test(safe)) {
+      try { await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(target), { preview: true, preserveFocus: true, viewColumn: vscode.ViewColumn.Beside }); } catch (e) {}
+    }
+    const pick = await vscode.window.showInformationMessage(t('file_ready').replace('{m}', mention), t('go_claude'));
+    if (pick) await openClaude();
+  } catch (e) {
+    reportError(context, api, 'giveFile', e);
+    vscode.window.showErrorMessage(t('file_failed') + ': ' + (e.message || e));
+  }
+}
+
+/** A notification of the operating system (the window may be behind others). */
+function osNotify(title, body) {
+  const cp = require('child_process');
+  try {
+    if (process.platform === 'darwin') {
+      cp.execFile('osascript', ['-e', `display notification ${JSON.stringify(body)} with title ${JSON.stringify(title)}`], () => {});
+    } else if (process.platform === 'win32') {
+      const ps = `[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null; $t = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02); $n = $t.GetElementsByTagName('text'); $n.Item(0).AppendChild($t.CreateTextNode(${JSON.stringify(title)})) > $null; $n.Item(1).AppendChild($t.CreateTextNode(${JSON.stringify(body)})) > $null; [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('MOOPI Desktop').Show([Windows.UI.Notifications.ToastNotification]::new($t))`;
+      cp.execFile('powershell', ['-NoProfile', '-NonInteractive', '-Command', ps], () => {});
+    } else {
+      cp.execFile('notify-send', [title, body], () => {});
+    }
+  } catch (e) {}
+}
+
+/** New approvals and MOOPI notifications, checked every minute: a message in the window and one of the
+ *  operating system, so the owner knows without opening MOOPI. */
+let watchTimer = null;
+async function watchMoopi(context, api) {
+  if (!api.token) return;
+  try {
+    const approvals = await api.get('/approvals');
+    const pending = (approvals || []).filter((a) => a.status === 'pending').map((a) => a.id);
+    const seen = new Set(context.globalState.get('moopi.seenApprovals') || []);
+    const fresh = pending.filter((id) => !seen.has(id));
+    if (fresh.length && seen.size) { // not on the very first look
+      const text = t('approvals_waiting').replace('{n}', String(pending.length));
+      osNotify('MOOPI', text);
+      vscode.window.showInformationMessage(text, t('open_approvals')).then((pick) => { if (pick && appPanel) { appPanel.reveal(); appPanel.webview.postMessage({ goto: 'approvals' }); } });
+    }
+    await context.globalState.update('moopi.seenApprovals', pending.slice(0, 500));
+    const notes = await api.get('/notifications');
+    const unread = (notes || []).filter((n) => !n.read);
+    const lastNote = context.globalState.get('moopi.lastNotification') || 0;
+    const newest = unread.filter((n) => n.id > lastNote);
+    if (newest.length && lastNote) {
+      const n = newest[newest.length - 1];
+      osNotify('MOOPI', String(n.text || '').slice(0, 160));
+      vscode.window.showInformationMessage(String(n.text || '').slice(0, 200));
+    }
+    if (unread.length || notes && notes.length) await context.globalState.update('moopi.lastNotification', Math.max(lastNote, ...(notes || []).map((n) => n.id || 0)));
+  } catch (e) { noteError('watchMoopi', e); }
 }
 
 /** The window's shape: no IDE chrome, the MOOPI app in the middle, Claude Code's panel on the right. */
@@ -286,9 +360,11 @@ function activate(context) {
     try { await vscode.commands.executeCommand('workbench.action.lockEditorGroup'); } catch (e) {}
     setTimeout(async () => { if (await ensureClaude(context)) { await openClaude(); appPanel && appPanel.reveal(vscode.ViewColumn.One, true); } }, 2500);
   })();
-  // Refresh the panels now and then while the window is open.
+  // Refresh the panels now and then while the window is open; watch MOOPI for new approvals and notes.
   const timer = setInterval(() => { if (api.token) refreshAll(); }, 120000);
-  context.subscriptions.push({ dispose: () => clearInterval(timer) });
+  watchTimer = setInterval(() => watchMoopi(context, api), 60000);
+  setTimeout(() => watchMoopi(context, api), 15000);
+  context.subscriptions.push({ dispose: () => { clearInterval(timer); clearInterval(watchTimer); } });
 }
 function deactivate() {}
 module.exports = { activate, deactivate };
