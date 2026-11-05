@@ -1,0 +1,6 @@
+.run/
+vendor/VSCodium.app/
+vendor/*.vsix
+node_modules/
+*.vsix
+.DS_Store

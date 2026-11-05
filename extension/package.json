@@ -1,0 +1,48 @@
+{
+  "name": "moopi-desktop",
+  "displayName": "MOOPI",
+  "description": "MOOPI panellari: Bugun, Tasdiqlar, Fayllar — Claude Code bilan bir oynada.",
+  "version": "0.1.0",
+  "publisher": "moopi",
+  "license": "UNLICENSED",
+  "engines": { "vscode": "^1.94.0" },
+  "categories": ["Other"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        { "id": "moopi", "title": "MOOPI", "icon": "media/moopi.svg" }
+      ]
+    },
+    "views": {
+      "moopi": [
+        { "type": "webview", "id": "moopi.bugun", "name": "Bugun" },
+        { "type": "webview", "id": "moopi.tasdiqlar", "name": "Tasdiqlar" },
+        { "type": "webview", "id": "moopi.fayllar", "name": "Fayllar" }
+      ]
+    },
+    "commands": [
+      { "command": "moopi.signIn", "title": "MOOPI: Kirish" },
+      { "command": "moopi.signOut", "title": "MOOPI: Chiqish" },
+      { "command": "moopi.refresh", "title": "MOOPI: Yangilash", "icon": "$(refresh)" },
+      { "command": "moopi.openClaude", "title": "MOOPI: Claude bilan suhbat", "icon": "$(sparkle)" }
+    ],
+    "menus": {
+      "view/title": [
+        { "command": "moopi.refresh", "when": "view =~ /^moopi\\./", "group": "navigation" },
+        { "command": "moopi.openClaude", "when": "view == moopi.bugun", "group": "navigation" }
+      ]
+    },
+    "configuration": {
+      "title": "MOOPI",
+      "properties": {
+        "moopi.apiUrl": { "type": "string", "default": "https://moopi.uz/api", "description": "MOOPI API manzili." },
+        "moopi.language": { "type": "string", "enum": ["uz", "ru"], "default": "uz", "description": "Panellar tili." }
+      }
+    },
+    "themes": [
+      { "label": "MOOPI Dark", "uiTheme": "vs-dark", "path": "./themes/moopi-dark.json" }
+    ]
+  }
+}
