@@ -37,7 +37,7 @@ Object.assign(T.uz, {
   dictate_copied: "Matn nusxalandi \u2014 Claude maydoniga Ctrl+V bilan qo\u2018ying.", dictate_failed: 'Ovozni matnga aylantirib bo\u2018lmadi',
   dictate_unsupported: 'Gapirib yozish bu tizimda hozircha yo\u2018q', dictate_recording: 'Yozilmoqda\u2026 to\u2018xtatish uchun yana bosing',
   update_ready: 'MOOPI yangilandi ({v}). Qayta yuklash?', updating: 'Yangilanmoqda: {v}\u2026', updated: 'Yangilandi: {v} \u2014 qayta yuklang',
-  reload: 'Qayta yuklash', later: 'Keyinroq', up_to_date: 'MOOPI yangi ({v}).', update_failed: 'Yangilab bo\u2018lmadi',
+  reload: 'Qayta yuklash', later: 'Keyinroq', up_to_date: 'MOOPI yangi ({v}).', update_failed: 'Yangilab bo\u2018lmadi', update_reloading: 'MOOPI {v} ga yangilandi \u2014 qayta yuklanmoqda\u2026',
   signed_in_google: 'Kirdingiz.', signin_failed: 'Kirib bo\u2018lmadi: {e}', launch_on: 'Kompyuter bilan ochilish yoqildi',
   launch_off: 'Kompyuter bilan ochilish o\u2018chirildi', hotkey_set: 'Tezkor tugma: {k}', hotkey_cleared: 'Tezkor tugma olib tashlandi',
   hotkey_bad: 'Tezkor tugma Ctrl+Alt+M ko\u2018rinishida bo\u2018lsin', workspace_opening: 'MOOPI ish papkasi ochilmoqda\u2026',
@@ -46,7 +46,7 @@ Object.assign(T.ru, {
   dictate_copied: '\u0422\u0435\u043a\u0441\u0442 \u0441\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u043d \u2014 \u0432\u0441\u0442\u0430\u0432\u044c\u0442\u0435 \u0432 \u043f\u043e\u043b\u0435 Claude (Ctrl+V).', dictate_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043f\u0440\u0435\u0432\u0440\u0430\u0442\u0438\u0442\u044c \u0440\u0435\u0447\u044c \u0432 \u0442\u0435\u043a\u0441\u0442',
   dictate_unsupported: '\u041d\u0430\u0434\u0438\u043a\u0442\u043e\u0432\u043a\u0430 \u0432 \u044d\u0442\u043e\u0439 \u0441\u0438\u0441\u0442\u0435\u043c\u0435 \u043f\u043e\u043a\u0430 \u043d\u0435\u0434\u043e\u0441\u0442\u0443\u043f\u043d\u0430', dictate_recording: '\u0417\u0430\u043f\u0438\u0441\u044c\u2026 \u043d\u0430\u0436\u043c\u0438\u0442\u0435 \u0435\u0449\u0451 \u0440\u0430\u0437, \u0447\u0442\u043e\u0431\u044b \u043e\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u044c',
   update_ready: 'MOOPI \u043e\u0431\u043d\u043e\u0432\u043b\u0451\u043d ({v}). \u041f\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c?', updating: '\u041e\u0431\u043d\u043e\u0432\u043b\u0435\u043d\u0438\u0435: {v}\u2026', updated: '\u041e\u0431\u043d\u043e\u0432\u043b\u0435\u043d\u043e: {v} \u2014 \u043f\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u0435',
-  reload: '\u041f\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c', later: '\u041f\u043e\u0437\u0436\u0435', up_to_date: 'MOOPI \u0430\u043a\u0442\u0443\u0430\u043b\u0435\u043d ({v}).', update_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0431\u043d\u043e\u0432\u0438\u0442\u044c',
+  reload: '\u041f\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c', later: '\u041f\u043e\u0437\u0436\u0435', update_reloading: 'MOOPI обновлён до {v} \u2014 перезагрузка\u2026', up_to_date: 'MOOPI \u0430\u043a\u0442\u0443\u0430\u043b\u0435\u043d ({v}).', update_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0431\u043d\u043e\u0432\u0438\u0442\u044c',
   signed_in_google: '\u0412\u044b \u0432\u043e\u0448\u043b\u0438.', signin_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0432\u043e\u0439\u0442\u0438: {e}', launch_on: '\u0417\u0430\u043f\u0443\u0441\u043a \u0441 \u043a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440\u043e\u043c \u0432\u043a\u043b\u044e\u0447\u0451\u043d',
   launch_off: '\u0417\u0430\u043f\u0443\u0441\u043a \u0441 \u043a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440\u043e\u043c \u0432\u044b\u043a\u043b\u044e\u0447\u0435\u043d', hotkey_set: '\u0413\u043e\u0440\u044f\u0447\u0430\u044f \u043a\u043b\u0430\u0432\u0438\u0448\u0430: {k}', hotkey_cleared: '\u0413\u043e\u0440\u044f\u0447\u0430\u044f \u043a\u043b\u0430\u0432\u0438\u0448\u0430 \u0443\u0431\u0440\u0430\u043d\u0430',
   hotkey_bad: '\u0413\u043e\u0440\u044f\u0447\u0430\u044f \u043a\u043b\u0430\u0432\u0438\u0448\u0430 \u0432 \u0432\u0438\u0434\u0435 Ctrl+Alt+M', workspace_opening: '\u041e\u0442\u043a\u0440\u044b\u0432\u0430\u044e \u0440\u0430\u0431\u043e\u0447\u0443\u044e \u043f\u0430\u043f\u043a\u0443 MOOPI\u2026',
@@ -676,6 +676,7 @@ async function desktopAction(context, api, action, value) {
       vscode.window.showInformationMessage(k ? t('hotkey_set').replace('{k}', k) : t('hotkey_cleared'));
     }
   } else if (action === 'sendLogs') await sendLogs(context, api, 'user', false);
+  else if (action === 'checkUpdate') await checkUpdate(context, api, true);
   else if (action === 'watchAdd') await watch.add(context, ctx);
   else if (action === 'watchRemove') await watch.remove(context, ctx, String(value || ''));
   else if (action === 'quickRun') quick.run(context, ctx, String(value || '')).catch((e) => reportError(context, api, 'quick', e));
@@ -739,7 +740,8 @@ function compareVersions(a, b) {
   for (let i = 0; i < 3; i++) if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) - (pb[i] || 0);
   return 0;
 }
-async function checkUpdate(context, api, manual) {
+/** [atStart]: the check made as the window comes up — the new version is loaded at once, nothing is being done yet. */
+async function checkUpdate(context, api, manual, atStart) {
   const conf = vscode.workspace.getConfiguration('moopi');
   if (!manual && !conf.get('autoUpdate', true)) return;
   const current = context.extension.packageJSON.version;
@@ -761,6 +763,11 @@ async function checkUpdate(context, api, manual) {
     await vscode.commands.executeCommand('workbench.extensions.installExtension', vscode.Uri.file(file));
     try { fs.unlinkSync(file); } catch (e) {}
     updating = t('updated').replace('{v}', tag); sendState(context, api);
+    if (atStart) { // nobody is in the middle of anything yet: the new version comes up by itself
+      vscode.window.showInformationMessage(t('update_reloading').replace('{v}', tag));
+      setTimeout(() => vscode.commands.executeCommand('workbench.action.reloadWindow'), 2500);
+      return;
+    }
     const pick = await vscode.window.showInformationMessage(t('update_ready').replace('{v}', tag), t('reload'), t('later'));
     if (pick === t('reload')) await vscode.commands.executeCommand('workbench.action.reloadWindow');
   } catch (e) {
@@ -1003,7 +1010,7 @@ function activate(context) {
 
     ping(context, api).catch(() => {});
     context.subscriptions.push(api.onChange(() => { if (api.token) { pingedAt = 0; ping(context, api).catch(() => {}); } }));
-    setTimeout(() => checkUpdate(context, api, false), 20000);
+    setTimeout(() => checkUpdate(context, api, false, true), 20000);
     watch.start(context, assistantContext(context, api));
     armHotkey(context, api);
     context.subscriptions.push({ dispose: () => { watch.stop(); if (hotkeyHelper) hotkeyHelper.stop(); } });
