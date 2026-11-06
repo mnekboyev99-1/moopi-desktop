@@ -1,0 +1,23 @@
+{
+  "name": "moopi-bootstrap",
+  "displayName": "MOOPI (yuklovchi)",
+  "description": "MOOPI Desktop ichiga tikilgan kichik yuklovchi: birinchi ishga tushishda asosiy MOOPI kengaytmasini o'rnatadi, u keyin o'zi yangilanib boradi.",
+  "version": "0.0.1",
+  "publisher": "moopi",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mnekboyev99-1/moopi-desktop"
+  },
+  "engines": {
+    "vscode": "^1.94.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension.js",
+  "contributes": {}
+}
