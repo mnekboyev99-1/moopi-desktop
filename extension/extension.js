@@ -2,7 +2,6 @@
 // API, the same ways as the app), shows Bugun / Tasdiqlar / Fayllar as sidebar panels, opens Claude in the
 // editor area at startup. Nothing here touches Claude's own sign-in or the Claude Code extension.
 const vscode = require('vscode');
-const brain = require('./brain');
 const platform = require('./platform');
 const assistant = require('./assistant');
 const watch = require('./watch');
@@ -68,6 +67,9 @@ Object.assign(T.uz, {
   quick_busy: "MOOPI hozir band — biroz kuting.", quick_done: "Tayyor: {f} — ochildi, tayyor/ papkasida.", quick_nothing: "Bajarildi.",
   quick_failed: "Bajarib bo'lmadi — yana urinib ko'ring.", briefing_title: "Ertalabki brifing", explorer_on: "Explorer menyusiga qo'shildi: «MOOPI'ga yuborish»",
   explorer_off: "Explorer menyusidan olib tashlandi", hotkey_taken: "Bu tugma band — boshqasini tanlang",
+  as_need_ax: "Mac'ga klaviatura ruxsati kerak (Accessibility): ochilgan oynada MOOPI Desktop (yoki VSCodium) ni yoqing va qayta urinib ko'ring.",
+  quick_sent: "Topshiriq Claude paneliga yuborildi — natija tayyor/ papkasiga tushadi va o'zi ochiladi.",
+  watch_ask: "Yangi fayl: {f} — MOOPI o'qib, nima muhimligini aytsinmi?", watch_yes: "Ha, o'qi",
 });
 Object.assign(T.ru, {
   as_ready: "Готов. Говорите или пишите.", as_listening: "Слушаю… нажмите ещё раз, чтобы остановить", as_thinking: "Думаю…",
@@ -85,6 +87,9 @@ Object.assign(T.ru, {
   quick_busy: "MOOPI сейчас занят — подождите.", quick_done: "Готово: {f} — открыто, лежит в tayyor/.", quick_nothing: "Выполнено.",
   quick_failed: "Не удалось — попробуйте ещё.", briefing_title: "Утренний брифинг", explorer_on: "Добавлено в меню Explorer: «Отправить в MOOPI»",
   explorer_off: "Убрано из меню Explorer", hotkey_taken: "Эта клавиша занята — выберите другую",
+  as_need_ax: "Mac нужен доступ к клавиатуре (Accessibility): в открывшемся окне включите MOOPI Desktop (или VSCodium) и попробуйте снова.",
+  quick_sent: "Задание отправлено в панель Claude — результат появится в tayyor/ и откроется сам.",
+  watch_ask: "Новый файл: {f} — MOOPI прочитать и сказать главное?", watch_yes: "Да, прочитай",
 });
 function lang() { return vscode.workspace.getConfiguration('moopi').get('language', 'uz') === 'ru' ? 'ru' : 'uz'; }
 function t(key) { return (T[lang()] && T[lang()][key]) || T.uz[key] || key; }
@@ -347,6 +352,11 @@ function readNewLines(file) {
   voice.offsets.set(file, from + Buffer.byteLength(text.slice(0, cut + 1)));
   return text.slice(0, cut).split('\n').filter(Boolean);
 }
+function turnsIn(lines) {
+  const out = [];
+  for (const line of lines) { const t = parseTurn(line); if (t) out.push(t); }
+  return out;
+}
 function answersIn(lines) {
   const out = [];
   for (const line of lines) {
@@ -367,8 +377,11 @@ function startVoiceWatch(context, api) {
     voice.watcher = fs.watch(dir, (ev, name) => {
       if (!name || !name.endsWith('.jsonl')) return;
       syncTranscript(context, api, path.join(dir, name));
-      if (!voice.on) return;
-      for (const text of answersIn(readNewLines(path.join(dir, name)))) speak(context, api, text);
+      const ctx = assistantContext(context, api);
+      for (const turn of turnsIn(readNewLines(path.join(dir, name)))) {
+        const spoken = assistant.onTranscript(ctx, turn);
+        if (turn.role === 'assistant' && !spoken && voice.on) speak(context, api, turn.text);
+      }
     });
     context.subscriptions.push({ dispose: () => { try { voice.watcher.close(); } catch (e) {} } });
   } catch (e) { noteError('voiceWatch', e); }
@@ -610,7 +623,7 @@ function sendState(context, api) {
   pushToApp({ moopi: 'state', platform: process.platform, arch: process.arch, appVersion: vscode.version,
     extVersion: context.extension.packageJSON.version, claudeVersion: claudeVersion(), claudeState, voice: !!voice.on,
     voiceAway: context.globalState.get('moopi.voiceAway') !== false, voiceShort: context.globalState.get('moopi.voiceShort') !== false,
-    assistantVoice: context.globalState.get('moopi.assistantVoice') !== false, brain: !!brain.binary(),
+    assistantVoice: context.globalState.get('moopi.assistantVoice') !== false, brain: claudeState === 'ready',
     launchAtLogin: !!context.globalState.get('moopi.launchAtLogin'), hotkey: String(context.globalState.get('moopi.hotkey') || ''),
     dictation: (platform.MAC || platform.WIN) ? dictation.state : 'unsupported', lastDictation: dictation.last,
     assistant: assistant.current(), updating,
@@ -663,9 +676,11 @@ function assistantContext(context, api) {
     reportError: (where, e) => reportError(context, api, where, e),
     sendState: () => sendState(context, api),
     assistantVoice: () => context.globalState.get('moopi.assistantVoice') !== false,
+    claudeReady: () => claudeState === 'ready',
     osNotify,
   };
   ctx.onReport = (kind, text, tool, final, asUser) => assistant.report(ctx, kind, text, tool, final, asUser);
+  ctx.typeToPanel = (text, image) => assistant.typeToPanel(ctx, text, image);
   return ctx;
 }
 

@@ -215,4 +215,25 @@ function startHotkey(text, onPress) {
   const poll = setInterval(() => { try { const v = fs.readFileSync(trigger, 'utf8'); if (v && v !== last) { last = v; onPress(); } } catch (e) {} }, 250);
   return { stop: () => { clearInterval(poll); try { child.kill(); } catch (e) {} try { fs.unlinkSync(trigger); } catch (e) {} } };
 }
-module.exports = { WIN, MAC, startRecording, screenshot, clipboardImage, copyImage, play, activateWindow, openPrivacy, explorerMenu, startHotkey, parseHotkey, ps, run };
+// ---------- keystrokes: paste what is on the clipboard into the focused input, then Enter — the way a
+// dictation program types into any app. The request itself is then made by Claude Code's own panel, with the
+// person's own sign-in; MOOPI only did the typing. (macOS asks for Accessibility once.)
+async function pasteAndEnter(submit) {
+  if (MAC) {
+    try {
+      await run('/usr/bin/osascript', ['-e', 'tell application "System Events" to keystroke "v" using command down',
+        ...(submit ? ['-e', 'delay 0.25', '-e', 'tell application "System Events" to key code 36'] : [])]);
+    } catch (e) {
+      if (/assistive access|not allowed|1002/i.test(String(e.message))) { const d = new Error('accessibility not allowed'); d.code = 'ax'; throw d; }
+      throw e;
+    }
+    return;
+  }
+  if (WIN) {
+    await ps(`Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('^v')${submit ? "; Start-Sleep -m 250; [System.Windows.Forms.SendKeys]::SendWait('{ENTER}')" : ''}`);
+    return;
+  }
+  throw new Error('typing: unsupported platform');
+}
+function openAccessibility() { if (MAC) cp.execFile('/usr/bin/open', ['x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility'], () => {}); }
+module.exports = { WIN, MAC, startRecording, screenshot, clipboardImage, copyImage, play, activateWindow, openPrivacy, openAccessibility, explorerMenu, startHotkey, parseHotkey, pasteAndEnter, ps, run };

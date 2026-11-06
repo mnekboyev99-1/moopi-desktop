@@ -1,26 +1,30 @@
-// The assistant: MOOPI's own window beside the app — a living light that listens, thinks and speaks; the
-// person's words and MOOPI's answers under it; the screen or the clipboard handed over with a tap. Behind it:
-// the microphone and the screen (platform.js), MOOPI's speech-to-text and voice (the server), and MOOPI's
-// local brain (brain.js: Claude Code in print mode, on the person's own sign-in).
+// The assistant: MOOPI's own window beside Claude's panel — a living light that listens and speaks, the
+// conversation mirrored under it, the screen or the clipboard handed over with a tap. It never calls Anthropic
+// itself: what the person says is typed into Claude Code's own panel (the clipboard and the system's keystrokes,
+// as a dictation program would), the panel makes the request on the person's own sign-in, and the answer is
+// read from the panel's transcript and spoken in MOOPI's voice. Behind it: the microphone and the screen
+// (platform.js), MOOPI's speech-to-text and voice (the server).
 'use strict';
 const vscode = require('vscode');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
-const brain = require('./brain');
 const platform = require('./platform');
 
-const SESSION_IDLE_MS = 6 * 3600 * 1000;
-const state = { panel: null, listening: null, phase: 'idle', speaking: null, queue: Promise.resolve(), stopSpeech: false, pendingImage: null };
+const WORKSPACE_DIR = path.join(os.homedir(), 'MOOPI');
+const EXPECT_MS = 5 * 60 * 1000;
+const state = { panel: null, listening: null, phase: 'idle', speaking: null, queue: Promise.resolve(), stopSpeech: false, pendingImage: null, expecting: 0, typing: false, autoStop: null };
 
 function say(ctx, key, vars) { let s = ctx.t(key); for (const [k, v] of Object.entries(vars || {})) s = s.replace('{' + k + '}', v); return s; }
 function post(msg) { if (state.panel) state.panel.webview.postMessage(msg); }
 function phase(p, caption) { state.phase = p; post({ kind: 'state', state: p, caption: caption || '' }); }
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function open(ctx, reveal) {
   if (state.panel) { if (reveal !== false) state.panel.reveal(vscode.ViewColumn.Two, true); return state.panel; }
   const media = vscode.Uri.joinPath(ctx.context.extensionUri, 'media');
   state.panel = vscode.window.createWebviewPanel('moopi.assistant', 'MOOPI', { viewColumn: vscode.ViewColumn.Two, preserveFocus: true },
-    { enableScripts: true, retainContextWhenHidden: true, localResourceRoots: [media, vscode.Uri.file(brain.WORKSPACE_DIR)] });
+    { enableScripts: true, retainContextWhenHidden: true, localResourceRoots: [media, vscode.Uri.file(WORKSPACE_DIR)] });
   state.panel.iconPath = vscode.Uri.joinPath(media, 'moopi.svg');
   const nonce = Math.random().toString(36).slice(2) + Date.now().toString(36);
   const mark = state.panel.webview.asWebviewUri(vscode.Uri.joinPath(media, 'moopi.svg'));
@@ -31,23 +35,24 @@ function open(ctx, reveal) {
 <link rel="stylesheet" href="${css}"></head><body><div id="root" data-mark="${mark}"></div><script nonce="${nonce}" src="${js}"></script></body></html>`;
   state.panel.webview.onDidReceiveMessage((m) => onMessage(ctx, m).catch((e) => { ctx.reportError('assistant:' + m.kind, e); post({ kind: 'error', text: String((e && e.message) || e) }); }));
   state.panel.onDidDispose(() => { state.panel = null; stopSpeaking(); if (state.listening) state.listening.cancel(); state.listening = null; });
-  post({ kind: 'init', t: strings(ctx), state: state.phase, brain: !!brain.binary() });
+  post({ kind: 'init', t: strings(ctx), state: state.phase, brain: ctx.claudeReady() });
   return state.panel;
 }
 function strings(ctx) {
   const keys = ['as_ready', 'as_listening', 'as_thinking', 'as_speaking', 'as_tap_talk', 'as_tap_stop', 'as_type', 'as_send', 'as_screen', 'as_clip',
-    'as_to_claude', 'as_stop', 'as_new', 'as_you', 'as_moopi', 'as_no_brain', 'as_tool', 'as_image', 'as_hint', 'as_sent_claude', 'as_nothing_heard', 'as_need_mic', 'as_need_screen', 'as_too_short', 'as_open_window'];
+    'as_to_claude', 'as_stop', 'as_new', 'as_you', 'as_moopi', 'as_no_brain', 'as_tool', 'as_image', 'as_hint', 'as_sent_claude', 'as_nothing_heard',
+    'as_need_mic', 'as_need_screen', 'as_too_short', 'as_open_window'];
   const out = {}; for (const k of keys) out[k] = ctx.t(k); return out;
 }
 
 async function onMessage(ctx, m) {
-  if (m.kind === 'ready') post({ kind: 'init', t: strings(ctx), state: state.phase, brain: !!brain.binary() });
+  if (m.kind === 'ready') post({ kind: 'init', t: strings(ctx), state: state.phase, brain: ctx.claudeReady() });
   else if (m.kind === 'talk') await talk(ctx);
   else if (m.kind === 'ask') await askText(ctx, String(m.text || '').trim());
   else if (m.kind === 'screen') await askScreen(ctx);
   else if (m.kind === 'clip') await askClipboard(ctx);
-  else if (m.kind === 'stop') { stopSpeaking(); brain.cancel(); phase('idle'); }
-  else if (m.kind === 'new') { await ctx.context.globalState.update('moopi.brainSession', ''); state.pendingImage = null; post({ kind: 'clear' }); phase('idle'); }
+  else if (m.kind === 'stop') { stopSpeaking(); state.expecting = 0; phase('idle'); }
+  else if (m.kind === 'new') { state.pendingImage = null; state.expecting = 0; post({ kind: 'clear' }); phase('idle'); try { await vscode.commands.executeCommand('claude-vscode.newConversation'); } catch (e) {} }
   else if (m.kind === 'toClaude') await sendToClaude(ctx, m);
   else if (m.kind === 'close') { if (state.panel) state.panel.dispose(); }
 }
@@ -56,7 +61,7 @@ async function onMessage(ctx, m) {
 async function talk(ctx) {
   open(ctx, false);
   if (state.listening) { await finishListening(ctx); return; }
-  if (state.phase === 'thinking') return;
+  if (state.typing) return;
   stopSpeaking();
   if (!ctx.api.token) { post({ kind: 'error', text: ctx.t('signin') }); return; }
   try {
@@ -83,7 +88,7 @@ async function finishListening(ctx) {
     return;
   }
   if (!text) { phase('idle'); ctx.noteError('listen', 'empty transcript after ' + seconds + ' s'); post({ kind: 'error', text: seconds < 1 ? ctx.t('as_too_short') : ctx.t('as_nothing_heard') }); return; }
-  await askText(ctx, text, { spoken: true });
+  await askText(ctx, text);
 }
 async function transcribe(ctx, file) {
   const form = new FormData();
@@ -94,52 +99,55 @@ async function transcribe(ctx, file) {
   return String((((await r.json()) || {}).text) || '').trim();
 }
 
-// ---------- the question, to MOOPI's brain; the answer, shown and spoken ----------
-const VOICE_SYSTEM = {
-  uz: "Bu savol MOOPI Desktop'ning ovozli yordamchisidan keldi: javob ovoz bilan o'qib beriladi. Qisqa va og'zaki javob ber — 1–3 jumla, ro'yxat, jadval, kod va markdown belgilarisiz. Ko'p narsa kerak bo'lsa, eng muhimini ayt; batafsil hujjat kerak bo'lsa, uni tayyor/ papkasiga yoz va 'tayyor papkasiga yozdim' de.",
-  ru: "Этот вопрос пришёл из голосового помощника MOOPI Desktop: ответ будет прочитан вслух. Отвечай коротко и по-разговорному — 1–3 предложения, без списков, таблиц, кода и разметки. Если нужно много — скажи главное; если нужен документ — запиши его в папку tayyor/ и скажи об этом.",
-};
-async function askText(ctx, text, opts) {
+// ---------- the question goes into Claude's own panel; the answer comes back through its transcript ----------
+async function askText(ctx, text) {
   open(ctx, false);
   if (!text) return;
-  if (!brain.binary()) { post({ kind: 'error', text: ctx.t('as_no_brain') }); return; }
-  if (brain.busy()) { brain.cancel(); }
-  stopSpeaking();
+  if (!ctx.claudeReady()) { post({ kind: 'error', text: ctx.t('as_no_brain') }); return; }
   const image = state.pendingImage; state.pendingImage = null;
   post({ kind: 'you', text, image: image ? state.panel.webview.asWebviewUri(vscode.Uri.file(image)).toString() : null });
+  await typeToPanel(ctx, text, image);
+}
+/** Types [text] (and a picture before it) into Claude's panel and presses Enter. */
+async function typeToPanel(ctx, text, image) {
+  if (state.typing) { post({ kind: 'error', text: ctx.t('quick_busy') }); return false; }
+  state.typing = true;
+  stopSpeaking();
   phase('thinking', ctx.t('as_thinking'));
   ctx.sendState();
-  const now = Date.now(), lastAt = ctx.context.globalState.get('moopi.brainSessionAt') || 0;
-  let session = ctx.context.globalState.get('moopi.brainSession') || '';
-  if (!session || now - lastAt > SESSION_IDLE_MS) session = '';
-  const lang = (ctx.api.me && ctx.api.me.language) === 'ru' ? 'ru' : 'uz';
-  const prompt = image ? (lang === 'ru' ? `Картинка: ${image} — сначала посмотри её (Read). Вопрос: ${text}` : `Rasm: ${image} — avval uni ko'r (Read). Savol: ${text}`) : text;
-  let spokenSoFar = 0;
   try {
-    const result = await brain.ask({
-      prompt, session: session || undefined, system: VOICE_SYSTEM[lang], maxTurns: 10,
-      onTool: (name) => post({ kind: 'tool', text: say(ctx, 'as_tool', { t: name.replace(/^mcp__moopi__/, 'MOOPI · ') }) }),
-      onText: (piece) => { post({ kind: 'moopi', text: piece, append: true }); speak(ctx, piece); spokenSoFar += 1; },
-    });
-    await ctx.context.globalState.update('moopi.brainSession', result.session);
-    await ctx.context.globalState.update('moopi.brainSessionAt', Date.now());
-    if (!spokenSoFar && result.text) { post({ kind: 'moopi', text: result.text, append: true }); speak(ctx, result.text); }
-    post({ kind: 'moopi', text: '', final: true });
-    await state.queue;
-    if (state.phase !== 'listening') phase('idle');
+    await ctx.openClaude();
+    try { await vscode.commands.executeCommand('claude-vscode.focus'); } catch (e) {}
+    await wait(400);
+    if (image) { await platform.copyImage(image); await platform.pasteAndEnter(false); await wait(600); }
+    await vscode.env.clipboard.writeText(text);
+    await platform.pasteAndEnter(true);
+    state.expecting = Date.now();
+    return true;
   } catch (e) {
-    ctx.reportError('brain', e);
-    post({ kind: 'error', text: ctx.t('as_failed') });
-    phase('idle');
-  }
-  ctx.sendState();
+    phase('idle'); ctx.reportError('type', e);
+    if (e && e.code === 'ax') { post({ kind: 'error', text: ctx.t('as_need_ax') }); platform.openAccessibility(); }
+    else post({ kind: 'error', text: ctx.t('as_failed') });
+    return false;
+  } finally { state.typing = false; ctx.sendState(); }
+}
+/** A new turn in the panel's transcript (extension.js watches it): mirrored here; an answer we were waiting
+ *  for is spoken. Returns true when it spoke, so the plain read-aloud does not speak it a second time. */
+function onTranscript(ctx, turn) {
+  const expecting = state.expecting && Date.now() - state.expecting < EXPECT_MS;
+  if (turn.role === 'user') { if (state.panel && !expecting) post({ kind: 'you', text: turn.text }); return false; }
+  if (!state.panel && !expecting) return false;
+  post({ kind: 'moopi', text: turn.text, append: true });
+  post({ kind: 'moopi', text: '', final: true });
+  if (expecting) { speak(ctx, turn.text); return true; }
+  return false;
 }
 
 // ---------- the screen and the clipboard ----------
 async function askScreen(ctx) {
   open(ctx, false);
   try {
-    const file = await platform.screenshot(path.join(brain.WORKSPACE_DIR, 'fayllar'));
+    const file = await platform.screenshot(path.join(WORKSPACE_DIR, 'fayllar'));
     if (!file) return;
     state.pendingImage = file;
     post({ kind: 'image', uri: state.panel.webview.asWebviewUri(vscode.Uri.file(file)).toString(), text: ctx.t('as_image') });
@@ -153,7 +161,7 @@ async function askScreen(ctx) {
 async function askClipboard(ctx) {
   open(ctx, false);
   try {
-    const file = await platform.clipboardImage(path.join(brain.WORKSPACE_DIR, 'fayllar'));
+    const file = await platform.clipboardImage(path.join(WORKSPACE_DIR, 'fayllar'));
     if (file) {
       state.pendingImage = file;
       post({ kind: 'image', uri: state.panel.webview.asWebviewUri(vscode.Uri.file(file)).toString(), text: ctx.t('as_image') });
@@ -164,7 +172,7 @@ async function askClipboard(ctx) {
     state.panel.reveal(vscode.ViewColumn.Two, false);
   } catch (e) { ctx.reportError('clip', e); post({ kind: 'error', text: String((e && e.message) || e) }); }
 }
-/** The last answer, or the attached picture, into Claude's panel: the clipboard, the panel focused, one paste. */
+/** The last answer, or the attached picture, onto the clipboard with Claude's panel focused: one paste. */
 async function sendToClaude(ctx, m) {
   if (m.file || state.pendingImage) await platform.copyImage(m.file || state.pendingImage);
   else if (m.text) await vscode.env.clipboard.writeText(String(m.text));
@@ -185,13 +193,13 @@ function sentences(text) {
 function speak(ctx, text) {
   if (!ctx.assistantVoice() || !ctx.api.token) return;
   state.stopSpeech = false;
-  for (const piece of sentences(text)) {
+  for (const piece of sentences(text).slice(0, 12)) {
     state.queue = state.queue.then(async () => {
       if (state.stopSpeech) return;
       try {
         const r = await fetch(`${ctx.api.base}/voice/speak`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + ctx.api.token }, body: JSON.stringify({ text: piece }) });
         if (!r.ok) throw new Error('HTTP ' + r.status);
-        const file = path.join(require('os').tmpdir(), `moopi-say-${Date.now()}.mp3`);
+        const file = path.join(os.tmpdir(), `moopi-say-${Date.now()}.mp3`);
         fs.writeFileSync(file, Buffer.from(await r.arrayBuffer()));
         if (state.stopSpeech) { try { fs.unlinkSync(file); } catch (e) {} return; }
         phase('speaking', ctx.t('as_speaking'));
@@ -211,21 +219,17 @@ function stopSpeaking() {
   if (state.phase === 'speaking') phase('idle');
 }
 
-/** A line from a background job (a watched folder, a quick action) into the window — opened for a quick action,
- *  left as it is for a watched folder (a notification carries that) — and, when final, into the voice. */
+/** A line from a background job (a watched folder, the briefing): into the window and, when final, the voice. */
 function report(ctx, kind, text, tool, final, asUser) {
-  if (kind === 'quick') open(ctx, true);
-  if (tool) post({ kind: 'tool', text: say(ctx, 'as_tool', { t: tool.replace(/^mcp__moopi__/, 'MOOPI · ') }) });
+  if (tool) post({ kind: 'tool', text: say(ctx, 'as_tool', { t: tool }) });
   if (text && asUser) { post({ kind: 'you', text }); return; }
   if (text) {
     post({ kind: 'moopi', text, append: true });
-    if (final) {
-      post({ kind: 'moopi', text: '', final: true });
-      if (kind === 'watch' || kind === 'briefing') { vscode.window.showInformationMessage(text.slice(0, 300), ctx.t('as_open_window')).then((pick) => { if (pick) open(ctx, true); }); ctx.osNotify('MOOPI', text.slice(0, 160)); }
-      speak(ctx, text);
-    }
-  } else if (final) post({ kind: 'moopi', text: '', final: true });
+    if (final) { post({ kind: 'moopi', text: '', final: true }); speak(ctx, text); }
+  }
 }
+
 function listening() { return !!state.listening; }
 function current() { return state.phase; }
-module.exports = { open, talk, askText, askScreen, askClipboard, stopSpeaking, sendToClaude, listening, current, report };
+function expecting() { return !!state.expecting && Date.now() - state.expecting < EXPECT_MS; }
+module.exports = { open, talk, askText, typeToPanel, onTranscript, askScreen, askClipboard, stopSpeaking, sendToClaude, listening, current, expecting, report };

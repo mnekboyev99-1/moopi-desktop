@@ -1,12 +1,13 @@
-// Quick actions: one-tap jobs for MOOPI's local brain — "Kunlik hisobot", "Haftalik xulosa", "Qarzdorlar ro'yxati" —
-// each a name and an instruction the owner can change or add to. The result lands in tayyor/ (synced to MOOPI)
-// and opens in Word or Excel by itself.
+// Quick actions: one-tap jobs — "Kunlik hisobot", "Haftalik xulosa", "Qarzdorlar ro'yxati" — each a name and an
+// instruction the owner can change or add to. A tap types the instruction into Claude's own panel (the person
+// sees it run there, on their own sign-in); the result lands in tayyor/ by MOOPI's rule and opens by itself.
 'use strict';
 const vscode = require('vscode');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
-const brain = require('./brain');
 
+const WORKSPACE_DIR = path.join(os.homedir(), 'MOOPI');
 const DEFAULTS = {
   uz: [
     { id: 'daily', title: 'Kunlik hisobot', prompt: "Bugungi kun bo'yicha qisqa hisobot tayyorla: savdo, xarajat, qarzlar, bajarilgan va qolgan ishlar — MOOPI daftarlari, vazifalar va xotira asosida (MOOPI vositalari). Natijani tayyor/kunlik-hisobot-<sana>.docx qilib saqla (python-docx, kerak bo'lsa pip install; python bo'lmasa .md). Bir sahifa, sodda til. Oxirida 2 jumla bilan nima qilganingni ayt." },
@@ -30,29 +31,31 @@ async function addAction(context, lang, title, prompt) {
   await save(context, lang, actions);
 }
 async function removeAction(context, lang, id) { await save(context, lang, list(context, lang).filter((a) => a.id !== id)); }
-
 function snapshot(dir) { const out = new Map(); try { for (const n of fs.readdirSync(dir)) { try { out.set(n, fs.statSync(path.join(dir, n)).mtimeMs); } catch (e) {} } } catch (e) {} return out; }
 
-/** Runs one action: the assistant window shows it, the brain works, new files in tayyor/ open by themselves. */
+let opener = null;
+/** Runs one action: the instruction goes into Claude's panel; for six minutes, a new file in tayyor/ opens by itself. */
 async function run(context, ctx, id) {
   const lang = (ctx.api.me && ctx.api.me.language) === 'ru' ? 'ru' : 'uz';
   const action = list(context, lang).find((a) => a.id === id);
   if (!action) return;
-  if (!brain.binary()) { vscode.window.showWarningMessage(ctx.t('as_no_brain')); return; }
-  if (brain.busy()) { vscode.window.showInformationMessage(ctx.t('quick_busy')); return; }
-  const out = path.join(brain.WORKSPACE_DIR, 'tayyor');
+  const out = path.join(WORKSPACE_DIR, 'tayyor');
   fs.mkdirSync(out, { recursive: true });
-  const before = snapshot(out);
+  const today = new Date().toISOString().slice(0, 10);
   ctx.onReport('quick', '⚡ ' + action.title, null, false, true);
-  try {
-    const today = new Date().toISOString().slice(0, 10);
-    const r = await brain.ask({ prompt: action.prompt.replace(/<sana>|<дата>/g, today), maxTurns: 24, timeoutMs: 420000,
-      onTool: (n) => ctx.onReport('quick', null, n), onText: (piece) => ctx.onReport('quick', piece, null, false) });
-    const after = snapshot(out);
-    const fresh = [...after.keys()].filter((n) => !before.has(n) || before.get(n) !== after.get(n)).map((n) => path.join(out, n));
-    for (const f of fresh.slice(0, 3)) { try { await vscode.env.openExternal(vscode.Uri.file(f)); } catch (e) {} }
-    ctx.onReport('quick', fresh.length ? ctx.t('quick_done').replace('{f}', fresh.map((f) => path.basename(f)).join(', ')) : (r.text ? '' : ctx.t('quick_nothing')), null, true);
-  } catch (e) { ctx.reportError('quick:' + id, e); ctx.onReport('quick', ctx.t('quick_failed'), null, true); }
+  const ok = await ctx.typeToPanel(action.prompt.replace(/<sana>|<дата>/g, today));
+  if (!ok) return;
+  vscode.window.setStatusBarMessage(ctx.t('quick_sent'), 8000);
+  const before = snapshot(out), started = Date.now(), opened = new Set();
+  clearInterval(opener);
+  opener = setInterval(() => {
+    if (Date.now() - started > 6 * 60000) { clearInterval(opener); return; }
+    for (const [n, m] of snapshot(out)) {
+      if ((before.has(n) && before.get(n) === m) || opened.has(n) || n.startsWith('.') || n.startsWith('~$')) continue;
+      opened.add(n);
+      setTimeout(() => { vscode.env.openExternal(vscode.Uri.file(path.join(out, n))).then(() => {}, () => {}); }, 2000);
+      vscode.window.showInformationMessage(ctx.t('quick_done').replace('{f}', n));
+    }
+  }, 5000);
 }
-
 module.exports = { list, addAction, removeAction, run, DEFAULTS };
