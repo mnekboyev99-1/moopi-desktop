@@ -48,7 +48,7 @@ function resolve(ctx, view) {
 }
 function strings(ctx) {
   const keys = ['as_ready', 'as_listening', 'as_thinking', 'as_claude_thinking', 'as_reading', 'as_speaking', 'as_tap_talk', 'as_tap_stop', 'as_type', 'as_send',
-    'as_screen', 'as_clip', 'as_stop', 'as_new', 'as_image', 'as_remove', 'as_answered'];
+    'as_screen', 'as_clip', 'as_usage', 'as_stop', 'as_new', 'as_image', 'as_remove', 'as_answered'];
   const out = {}; for (const k of keys) out[k] = ctx.t(k); return out;
 }
 
@@ -58,6 +58,7 @@ async function onMessage(ctx, m) {
   else if (m.kind === 'ask') await askText(ctx, String(m.text || '').trim());
   else if (m.kind === 'screen') await askScreen(ctx);
   else if (m.kind === 'clip') await askClipboard(ctx);
+  else if (m.kind === 'usage') await usage(ctx);
   else if (m.kind === 'stop') stop(ctx);
   else if (m.kind === 'new') await newConversation(ctx);
   else if (m.kind === 'detach') { state.pendingImage = null; post({ kind: 'detach' }); }
@@ -175,6 +176,25 @@ async function typeToPanel(ctx, text, image) {
     return false;
   } finally { state.typing = false; ctx.sendState(); }
 }
+/** A command of Claude's own (/usage: the account's limits) typed into the panel; no answer is awaited —
+ *  Claude shows it in a window of its own. */
+async function slash(ctx, command) {
+  if (!ctx.claudeReady()) { note(ctx, ctx.t('as_no_brain')); return; }
+  if (state.typing) { note(ctx, ctx.t('quick_busy')); return; }
+  state.typing = true;
+  try {
+    await ctx.openClaude();
+    try { await vscode.commands.executeCommand('claude-vscode.focus'); } catch (e) {}
+    await wait(400);
+    await vscode.env.clipboard.writeText(command);
+    await platform.pasteAndEnter(true);
+    note(ctx, ctx.t('as_usage_sent'), 'info');
+  } catch (e) {
+    ctx.reportError('slash', e);
+    if (e && e.code === 'ax') { note(ctx, ctx.t('as_need_ax')); platform.openAccessibility(); } else note(ctx, ctx.t('as_failed'));
+  } finally { state.typing = false; }
+}
+function usage(ctx) { return slash(ctx, '/usage'); }
 /** The answer is awaited for a while; when none comes the light goes back to rest. */
 function expect(ctx) {
   state.expecting = Date.now();
@@ -266,4 +286,4 @@ function report(ctx, kind, text, tool, final, asUser) {
 function listening() { return !!state.listening; }
 function current() { return state.phase; }
 function expecting() { return !!state.expecting && Date.now() - state.expecting < EXPECT_MS; }
-module.exports = { init, open, talk, askText, typeToPanel, onTranscript, askScreen, askClipboard, stop, stopSpeaking, newConversation, listening, current, expecting, report };
+module.exports = { init, open, talk, askText, typeToPanel, onTranscript, askScreen, askClipboard, usage, stop, stopSpeaking, newConversation, listening, current, expecting, report };

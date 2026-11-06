@@ -16,6 +16,7 @@
       <div class="field" id="field"><input id="input" type="text" autocomplete="off" spellcheck="false"><button class="send" id="send" title="">↑</button></div>
       <button id="screen" class="tool" title=""><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="13" rx="2"/><path d="M8 21h8"/></svg><span></span></button>
       <button id="clip" class="tool" title=""><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="12" height="16" rx="2"/><path d="M9 4V3h6v1"/></svg><span></span></button>
+      <button id="usage" class="tool" title=""><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 16a8 8 0 0 1 16 0"/><path d="M12 16l4-5"/><circle cx="12" cy="16" r="1.5" fill="currentColor" stroke="none"/></svg><span></span></button>
     </div>`;
   const $ = (id) => document.getElementById(id);
   const input = $('input'), mic = $('mic'), cap = $('caption'), stopBtn = $('stop'), field = $('field');
@@ -24,7 +25,7 @@
     mic.title = state === 'listening' ? T.as_tap_stop : T.as_tap_talk;
     input.placeholder = T.as_type || '';
     $('send').title = T.as_send || '';
-    for (const id of ['screen', 'clip']) { const b = $(id); b.querySelector('span').textContent = T['as_' + id] || ''; b.title = T['as_' + id] || ''; }
+    for (const id of ['screen', 'clip', 'usage']) { const b = $(id); b.querySelector('span').textContent = T['as_' + id] || ''; b.title = T['as_' + id] || ''; }
     stopBtn.querySelector('span').textContent = T.as_stop || '';
     $('attachX').title = T.as_remove || '';
   }
@@ -53,6 +54,7 @@
   input.addEventListener('input', () => field.classList.toggle('has', !!input.value.trim()));
   $('screen').addEventListener('click', () => vscode.postMessage({ kind: 'screen' }));
   $('clip').addEventListener('click', () => vscode.postMessage({ kind: 'clip' }));
+  $('usage').addEventListener('click', () => vscode.postMessage({ kind: 'usage' }));
   stopBtn.addEventListener('click', () => vscode.postMessage({ kind: 'stop' }));
   $('attachX').addEventListener('click', () => { $('attach').hidden = true; vscode.postMessage({ kind: 'detach' }); });
 

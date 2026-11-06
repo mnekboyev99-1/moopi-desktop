@@ -64,7 +64,8 @@ Object.assign(T.uz, {
   as_need_screen: "Mac ekranni olishga ruxsat bermagan. Ochilgan oynada «Ekranni yozib olish» ro'yxatida MOOPI Desktop (yoki VSCodium) ni yoqing va dasturni qayta oching.",
   as_too_short: "Juda qisqa — tugmani bosib, gapirib bo'lgach yana bosing.",
   as_claude_thinking: "Claude o‘ylayapti…", as_reading: "O‘qiyapman…", as_listening_short: "Eshityapman…", as_answered: "Javob Claude panelida",
-  as_remove: "Olib tashlash", as_clip_empty: "Buferda hech narsa yo‘q — avval nusxalang", as_open_window: "Yordamchini ochish", watch_pick: "Kuzatish", watch_reading: "MOOPI o'qiyapti: {f}", watch_failed: "O'qib bo'lmadi: {f}",
+  as_remove: "Olib tashlash", as_clip_empty: "Buferda hech narsa yo‘q — avval nusxalang", as_open_window: "Yordamchini ochish",
+  as_usage: "Limit", as_usage_sent: "Claude limiti Claude panelida ochildi (5 soatlik va haftalik).", watch_pick: "Kuzatish", watch_reading: "MOOPI o'qiyapti: {f}", watch_failed: "O'qib bo'lmadi: {f}",
   quick_busy: "MOOPI hozir band — biroz kuting.", quick_done: "Tayyor: {f} — ochildi, tayyor/ papkasida.", quick_nothing: "Bajarildi.",
   quick_failed: "Bajarib bo'lmadi — yana urinib ko'ring.", briefing_title: "Ertalabki brifing", explorer_on: "Explorer menyusiga qo'shildi: «MOOPI'ga yuborish»",
   explorer_off: "Explorer menyusidan olib tashlandi", hotkey_taken: "Bu tugma band — boshqasini tanlang",
@@ -85,7 +86,8 @@ Object.assign(T.ru, {
   as_need_screen: "Mac не дал доступ к записи экрана. В открывшемся окне в списке «Запись экрана» включите MOOPI Desktop (или VSCodium) и перезапустите программу.",
   as_too_short: "Слишком коротко — нажмите, скажите и нажмите ещё раз.",
   as_claude_thinking: "Claude думает…", as_reading: "Читаю…", as_listening_short: "Слушаю…", as_answered: "Ответ в панели Claude",
-  as_remove: "Убрать", as_clip_empty: "В буфере пусто — сначала скопируйте", as_open_window: "Открыть помощника", watch_pick: "Отслеживать", watch_reading: "MOOPI читает: {f}", watch_failed: "Не удалось прочитать: {f}",
+  as_remove: "Убрать", as_clip_empty: "В буфере пусто — сначала скопируйте", as_open_window: "Открыть помощника",
+  as_usage: "Лимит", as_usage_sent: "Лимит Claude открыт в панели Claude (5-часовой и недельный).", watch_pick: "Отслеживать", watch_reading: "MOOPI читает: {f}", watch_failed: "Не удалось прочитать: {f}",
   quick_busy: "MOOPI сейчас занят — подождите.", quick_done: "Готово: {f} — открыто, лежит в tayyor/.", quick_nothing: "Выполнено.",
   quick_failed: "Не удалось — попробуйте ещё.", briefing_title: "Утренний брифинг", explorer_on: "Добавлено в меню Explorer: «Отправить в MOOPI»",
   explorer_off: "Убрано из меню Explorer", hotkey_taken: "Эта клавиша занята — выберите другую",
@@ -662,6 +664,7 @@ async function desktopAction(context, api, action, value) {
   else if (action === 'assistant') assistant.open(ctx, true);
   else if (action === 'askScreen') await assistant.askScreen(ctx);
   else if (action === 'askClipboard') await assistant.askClipboard(ctx);
+  else if (action === 'usage') await assistant.usage(ctx);
   else if (action === 'installClaude') { if (await ensureClaude(context, api)) await openClaude(); }
   else if (action === 'launchAtLogin') {
     await context.globalState.update('moopi.launchAtLogin', !!value);
@@ -981,6 +984,7 @@ function activate(context) {
     vscode.commands.registerCommand('moopi.assistant', () => assistant.open(assistantContext(context, api), true)),
     vscode.commands.registerCommand('moopi.assistantNew', () => assistant.newConversation(assistantContext(context, api))),
     vscode.commands.registerCommand('moopi.assistantStop', () => assistant.stop(assistantContext(context, api))),
+    vscode.commands.registerCommand('moopi.usage', () => assistant.usage(assistantContext(context, api))),
     vscode.commands.registerCommand('moopi.askScreen', () => assistant.askScreen(assistantContext(context, api))),
     vscode.commands.registerCommand('moopi.askClipboard', () => assistant.askClipboard(assistantContext(context, api))),
   );

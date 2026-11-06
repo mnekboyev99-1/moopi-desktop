@@ -2,7 +2,7 @@
   "name": "moopi-desktop",
   "displayName": "MOOPI",
   "description": "MOOPI: Bugun, Tasdiqlar, Fayllar panellari, ovozli yordamchi — Claude Code bilan bir oynada.",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "publisher": "moopi",
   "license": "UNLICENSED",
   "repository": {
@@ -126,6 +126,10 @@
         "command": "moopi.assistantStop",
         "title": "MOOPI: Ovozni to'xtatish",
         "icon": "$(debug-stop)"
+      },
+      {
+        "command": "moopi.usage",
+        "title": "MOOPI: Claude limiti (/usage)"
       }
     ],
     "menus": {
