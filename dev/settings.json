@@ -2,7 +2,6 @@
   "window.title": "MOOPI Desktop",
   "window.commandCenter": false,
   "window.menuBarVisibility": "compact",
-  "workbench.colorTheme": "MOOPI Dark",
   "workbench.startupEditor": "none",
   "workbench.layoutControl.enabled": false,
   "workbench.editor.showTabs": "none",
@@ -11,7 +10,7 @@
   "workbench.secondarySideBar.defaultVisibility": "visible",
   "workbench.tips.enabled": false,
   "workbench.enableExperiments": false,
-  "workbench.statusBar.visible": false,
+  "workbench.statusBar.visible": true,
   "workbench.navigationControl.enabled": false,
   "workbench.view.alwaysShowHeaderActions": false,
   "breadcrumbs.enabled": false,
@@ -39,5 +38,7 @@
       "Tekshiryapman",
       "Yozyapman"
     ]
-  }
+  },
+  "workbench.preferredDarkColorTheme": "MOOPI Dark",
+  "workbench.preferredLightColorTheme": "MOOPI Light"
 }

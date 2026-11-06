@@ -1,8 +1,8 @@
 {
   "name": "moopi-desktop",
   "displayName": "MOOPI",
-  "description": "MOOPI panellari: Bugun, Tasdiqlar, Fayllar — Claude Code bilan bir oynada.",
-  "version": "0.8.0",
+  "description": "MOOPI: Bugun, Tasdiqlar, Fayllar panellari, ovozli yordamchi — Claude Code bilan bir oynada.",
+  "version": "0.9.0",
   "publisher": "moopi",
   "license": "UNLICENSED",
   "repository": {
@@ -46,6 +46,14 @@
           "type": "webview",
           "id": "moopi.fayllar",
           "name": "Fayllar"
+        }
+      ],
+      "claude-sidebar-secondary": [
+        {
+          "type": "webview",
+          "id": "moopi.yordamchi",
+          "name": "MOOPI",
+          "visibility": "visible"
         }
       ]
     },
@@ -99,7 +107,7 @@
       },
       {
         "command": "moopi.assistant",
-        "title": "MOOPI: Yordamchi oynasi"
+        "title": "MOOPI: Yordamchi"
       },
       {
         "command": "moopi.askScreen",
@@ -108,6 +116,16 @@
       {
         "command": "moopi.askClipboard",
         "title": "MOOPI: Nusxalaganimni berish"
+      },
+      {
+        "command": "moopi.assistantNew",
+        "title": "MOOPI: Yangi suhbat",
+        "icon": "$(add)"
+      },
+      {
+        "command": "moopi.assistantStop",
+        "title": "MOOPI: Ovozni to'xtatish",
+        "icon": "$(debug-stop)"
       }
     ],
     "menus": {
@@ -126,6 +144,16 @@
           "command": "moopi.sendLogs",
           "when": "view == moopi.bugun",
           "group": "navigation"
+        },
+        {
+          "command": "moopi.assistantStop",
+          "when": "view == moopi.yordamchi && moopi.speaking",
+          "group": "navigation@1"
+        },
+        {
+          "command": "moopi.assistantNew",
+          "when": "view == moopi.yordamchi",
+          "group": "navigation@2"
         }
       ]
     },
@@ -168,6 +196,11 @@
         "label": "MOOPI Dark",
         "uiTheme": "vs-dark",
         "path": "./themes/moopi-dark.json"
+      },
+      {
+        "label": "MOOPI Light",
+        "uiTheme": "vs",
+        "path": "./themes/moopi-light.json"
       }
     ],
     "keybindings": [

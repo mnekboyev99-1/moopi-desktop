@@ -54,16 +54,17 @@ Object.assign(T.ru, {
 Object.assign(T.uz, {
   as_ready: "Tayyorman. Gapiring yoki yozing.", as_listening: "Eshityapman… to‘xtatish uchun yana bosing", as_thinking: "O‘ylayapman…",
   as_speaking: "Gapiryapman", as_tap_talk: "Gapirish (Ctrl+Alt+M)", as_tap_stop: "To‘xtatish", as_type: "Yoki shu yerga yozing…", as_send: "Yuborish",
-  as_screen: "Ekrandan so‘ra", as_clip: "Nusxalaganimni ber", as_to_claude: "Claude paneliga", as_stop: "To‘xtat", as_new: "Yangi suhbat",
-  as_you: "Siz", as_moopi: "MOOPI", as_no_brain: "Claude Code hali o‘rnatilmagan — yordamchi undan keyin ishlaydi.",
-  as_tool: "{t}", as_image: "Rasm biriktirildi — endi savolingizni ayting yoki yozing", as_hint: "Mikrofonni bosing va gapiring. MOOPI xotirangiz va vositalaringiz bilan, o‘z Claude obunangizda javob beradi.",
-  as_sent_claude: "Claude maydoniga qo‘ying: Ctrl+V (Mac: ⌘V)", as_nothing_heard: "Hech narsa eshitilmadi — yana urinib ko‘ring", as_failed: "Javob bera olmadim. Claude’ga kirganmisiz? Yana urinib ko‘ring.",
+  as_screen: "Ekrandan so‘ra", as_clip: "Nusxalaganimni ber", as_stop: "To‘xtat", as_new: "Yangi suhbat",
+  as_no_brain: "Claude Code hali o‘rnatilmagan — yordamchi undan keyin ishlaydi.",
+  as_image: "Rasm biriktirildi — endi savolingizni ayting yoki yozing",
+  as_nothing_heard: "Hech narsa eshitilmadi — yana urinib ko‘ring", as_failed: "Javob bera olmadim. Claude’ga kirganmisiz? Yana urinib ko‘ring.",
   claude_ready: "Claude Code tayyor", claude_installing: "Claude Code o‘rnatilmoqda (150 MB)…", claude_missing: "Claude Code o‘rnatilmagan", claude_failed: "Claude Code o‘rnatilmadi — internetni tekshirib, qayta urinib ko‘ring",
   shot_cancelled: "Ekran rasmi olinmadi", voice_tail: " … davomi ekranda.",
   as_need_mic: "Mac mikrofonga ruxsat bermagan. Ochilgan oynada MOOPI Desktop (yoki VSCodium) ni yoqing va dasturni qayta oching.",
   as_need_screen: "Mac ekranni olishga ruxsat bermagan. Ochilgan oynada «Ekranni yozib olish» ro'yxatida MOOPI Desktop (yoki VSCodium) ni yoqing va dasturni qayta oching.",
   as_too_short: "Juda qisqa — tugmani bosib, gapirib bo'lgach yana bosing.",
-  as_open_window: "Oynani ochish", watch_pick: "Kuzatish", watch_reading: "MOOPI o'qiyapti: {f}", watch_failed: "O'qib bo'lmadi: {f}",
+  as_claude_thinking: "Claude o‘ylayapti…", as_reading: "O‘qiyapman…", as_listening_short: "Eshityapman…", as_answered: "Javob Claude panelida",
+  as_remove: "Olib tashlash", as_clip_empty: "Buferda hech narsa yo‘q — avval nusxalang", as_open_window: "Yordamchini ochish", watch_pick: "Kuzatish", watch_reading: "MOOPI o'qiyapti: {f}", watch_failed: "O'qib bo'lmadi: {f}",
   quick_busy: "MOOPI hozir band — biroz kuting.", quick_done: "Tayyor: {f} — ochildi, tayyor/ papkasida.", quick_nothing: "Bajarildi.",
   quick_failed: "Bajarib bo'lmadi — yana urinib ko'ring.", briefing_title: "Ertalabki brifing", explorer_on: "Explorer menyusiga qo'shildi: «MOOPI'ga yuborish»",
   explorer_off: "Explorer menyusidan olib tashlandi", hotkey_taken: "Bu tugma band — boshqasini tanlang",
@@ -74,16 +75,17 @@ Object.assign(T.uz, {
 Object.assign(T.ru, {
   as_ready: "Готов. Говорите или пишите.", as_listening: "Слушаю… нажмите ещё раз, чтобы остановить", as_thinking: "Думаю…",
   as_speaking: "Говорю", as_tap_talk: "Говорить (Ctrl+Alt+M)", as_tap_stop: "Остановить", as_type: "Или напишите здесь…", as_send: "Отправить",
-  as_screen: "Спросить по экрану", as_clip: "Дать скопированное", as_to_claude: "В панель Claude", as_stop: "Стоп", as_new: "Новый разговор",
-  as_you: "Вы", as_moopi: "MOOPI", as_no_brain: "Claude Code ещё не установлен — помощник заработает после него.",
-  as_tool: "{t}", as_image: "Картинка приложена — теперь задайте вопрос", as_hint: "Нажмите микрофон и говорите. MOOPI отвечает с вашей памятью и инструментами, на вашей подписке Claude.",
-  as_sent_claude: "Вставьте в поле Claude: Ctrl+V (Mac: ⌘V)", as_nothing_heard: "Ничего не услышал — попробуйте ещё", as_failed: "Не смог ответить. Вы вошли в Claude? Попробуйте ещё.",
+  as_screen: "Спросить по экрану", as_clip: "Дать скопированное", as_stop: "Стоп", as_new: "Новый разговор",
+  as_no_brain: "Claude Code ещё не установлен — помощник заработает после него.",
+  as_image: "Картинка приложена — теперь задайте вопрос",
+  as_nothing_heard: "Ничего не услышал — попробуйте ещё", as_failed: "Не смог ответить. Вы вошли в Claude? Попробуйте ещё.",
   claude_ready: "Claude Code готов", claude_installing: "Claude Code устанавливается (150 МБ)…", claude_missing: "Claude Code не установлен", claude_failed: "Claude Code не установился — проверьте интернет и повторите",
   shot_cancelled: "Снимок экрана не сделан", voice_tail: " … дальше на экране.",
   as_need_mic: "Mac не дал доступ к микрофону. В открывшемся окне включите MOOPI Desktop (или VSCodium) и перезапустите программу.",
   as_need_screen: "Mac не дал доступ к записи экрана. В открывшемся окне в списке «Запись экрана» включите MOOPI Desktop (или VSCodium) и перезапустите программу.",
   as_too_short: "Слишком коротко — нажмите, скажите и нажмите ещё раз.",
-  as_open_window: "Открыть окно", watch_pick: "Отслеживать", watch_reading: "MOOPI читает: {f}", watch_failed: "Не удалось прочитать: {f}",
+  as_claude_thinking: "Claude думает…", as_reading: "Читаю…", as_listening_short: "Слушаю…", as_answered: "Ответ в панели Claude",
+  as_remove: "Убрать", as_clip_empty: "В буфере пусто — сначала скопируйте", as_open_window: "Открыть помощника", watch_pick: "Отслеживать", watch_reading: "MOOPI читает: {f}", watch_failed: "Не удалось прочитать: {f}",
   quick_busy: "MOOPI сейчас занят — подождите.", quick_done: "Готово: {f} — открыто, лежит в tayyor/.", quick_nothing: "Выполнено.",
   quick_failed: "Не удалось — попробуйте ещё.", briefing_title: "Утренний брифинг", explorer_on: "Добавлено в меню Explorer: «Отправить в MOOPI»",
   explorer_off: "Убрано из меню Explorer", hotkey_taken: "Эта клавиша занята — выберите другую",
@@ -196,7 +198,7 @@ function openApp(context, api) {
   const nonce = Math.random().toString(36).slice(2) + Date.now().toString(36);
   appPanel.webview.html = `<!doctype html><html><head><meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-src ${origin}; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';">
-<style>html,body{margin:0;height:100%;background:#061210;overflow:hidden}iframe{border:0;width:100%;height:100%;display:block}</style></head>
+<style>html,body{margin:0;height:100%;background:var(--vscode-editor-background,#061210);overflow:hidden}iframe{border:0;width:100%;height:100%;display:block}</style></head>
 <body><iframe id="app" src="${url}?desktop=1" allow="clipboard-read; clipboard-write; microphone" referrerpolicy="origin"></iframe>
 <script nonce="${nonce}">
 const vscode = acquireVsCodeApi();
@@ -228,6 +230,7 @@ window.addEventListener('message', (e) => {
       else if (m.moopi === 'open' && typeof m.url === 'string' && /^https:\/\//.test(m.url)) await vscode.env.openExternal(vscode.Uri.parse(m.url));
       else if (m.moopi === 'googleSignIn') await vscode.env.openExternal(vscode.Uri.parse(api.base + '/auth/google/start?desktop=true'));
       else if (m.moopi === 'desktop') await desktopAction(context, api, String(m.action || ''), m.value);
+      else if (m.moopi === 'theme') await applyTheme(context, String(m.value || ''));
       else if (m.moopi === 'signedIn' && m.token) {
         if (m.token !== api.token) { api.token = m.token; await context.secrets.store('moopi.token', m.token); try { api.me = await api.get('/auth/me'); } catch (e) {} api.emit(); }
       } else if (m.moopi === 'signedOut') { await api.signOut(); }
@@ -468,11 +471,13 @@ async function watchMoopi(context, api) {
 /** The window's shape: no IDE chrome, the MOOPI app in the middle, Claude Code's panel on the right. */
 const LAYOUT = {
   'workbench.colorTheme': 'MOOPI Dark',
+  'workbench.preferredDarkColorTheme': 'MOOPI Dark',
+  'workbench.preferredLightColorTheme': 'MOOPI Light',
   'window.title': 'MOOPI Desktop',
   'window.commandCenter': false,
   'window.menuBarVisibility': 'compact',
   'workbench.activityBar.location': 'hidden',
-  'workbench.statusBar.visible': false,
+  'workbench.statusBar.visible': true,
   'workbench.editor.showTabs': 'none',
   'workbench.editor.editorActionsLocation': 'hidden',
   'workbench.layoutControl.enabled': false,
@@ -492,11 +497,26 @@ const LAYOUT = {
   'claudeCode.spinnerVerbs': { mode: 'replace', verbs: ["O'ylayapman", "Qarab chiqyapman", "Tayyorlayapman", "Tekshiryapman", "Yozyapman"] },
 };
 async function applyLayout(context) {
-  if (context.globalState.get('moopi.layout') === 4) return;
+  if (context.globalState.get('moopi.layout') === 5) return;
   for (const [k, v] of Object.entries(LAYOUT)) {
     try { await vscode.workspace.getConfiguration().update(k, v, vscode.ConfigurationTarget.Global); } catch (e) {}
   }
-  await context.globalState.update('moopi.layout', 4);
+  await context.globalState.update('moopi.layout', 5);
+  await applyTheme(context, context.globalState.get('moopi.theme') || 'dark');
+}
+/** The app's Sozlamalar → Mavzu, for the whole window: Claude's panel, the bar, the frame. 'system' follows the
+ *  computer (MOOPI Light by day, MOOPI Dark by night). */
+async function applyTheme(context, mode) {
+  mode = ['light', 'dark', 'system'].includes(mode) ? mode : 'dark';
+  await context.globalState.update('moopi.theme', mode);
+  const cfg = vscode.workspace.getConfiguration();
+  try {
+    if (mode === 'system') await cfg.update('window.autoDetectColorScheme', true, vscode.ConfigurationTarget.Global);
+    else {
+      await cfg.update('window.autoDetectColorScheme', false, vscode.ConfigurationTarget.Global);
+      await cfg.update('workbench.colorTheme', mode === 'light' ? 'MOOPI Light' : 'MOOPI Dark', vscode.ConfigurationTarget.Global);
+    }
+  } catch (e) { noteError('theme', e); }
 }
 
 /** Logs of this window: the extension host's folder (ours and Claude Code's output) and the main logs. */
@@ -562,6 +582,7 @@ async function ensureClaude(context, api) {
     });
     claudeState = 'ready'; if (api) sendState(context, api);
     vscode.window.showInformationMessage(t('claude_installed'));
+    setTimeout(() => vscode.commands.executeCommand('workbench.action.reloadWindow'), 1500); // the bar's place (Claude's container) exists after a reload
     return true;
   } catch (e) {
     claudeState = 'failed'; if (api) sendState(context, api);
@@ -638,7 +659,7 @@ async function desktopAction(context, api, action, value) {
   else if (action === 'assistantVoice') await context.globalState.update('moopi.assistantVoice', !!value);
   else if (action === 'dictate') await toggleDictation(context, api);
   else if (action === 'talk') await assistant.talk(ctx);
-  else if (action === 'assistant') assistant.open(ctx);
+  else if (action === 'assistant') assistant.open(ctx, true);
   else if (action === 'askScreen') await assistant.askScreen(ctx);
   else if (action === 'askClipboard') await assistant.askClipboard(ctx);
   else if (action === 'installClaude') { if (await ensureClaude(context, api)) await openClaude(); }
@@ -939,6 +960,7 @@ function activate(context) {
   context.subscriptions.push(status);
   const showStatus = () => { status.text = api.me ? `$(account) MOOPI · ${api.me.name || api.me.email || ''}` : '$(account) MOOPI'; status.show(); };
   context.subscriptions.push(api.onChange(() => { showStatus(); refreshAll(); }));
+  assistant.init(() => assistantContext(context, api), context);
   context.subscriptions.push(
     vscode.commands.registerCommand('moopi.signIn', () => vscode.commands.executeCommand('moopi.bugun.focus')),
     vscode.commands.registerCommand('moopi.signOut', async () => { await api.signOut(); vscode.window.showInformationMessage(t('signed_out')); }),
@@ -949,7 +971,9 @@ function activate(context) {
     vscode.commands.registerCommand('moopi.dictate', () => toggleDictation(context, api)),
     vscode.commands.registerCommand('moopi.checkUpdate', () => checkUpdate(context, api, true)),
     vscode.commands.registerCommand('moopi.talk', () => assistant.talk(assistantContext(context, api))),
-    vscode.commands.registerCommand('moopi.assistant', () => assistant.open(assistantContext(context, api))),
+    vscode.commands.registerCommand('moopi.assistant', () => assistant.open(assistantContext(context, api), true)),
+    vscode.commands.registerCommand('moopi.assistantNew', () => assistant.newConversation(assistantContext(context, api))),
+    vscode.commands.registerCommand('moopi.assistantStop', () => assistant.stop(assistantContext(context, api))),
     vscode.commands.registerCommand('moopi.askScreen', () => assistant.askScreen(assistantContext(context, api))),
     vscode.commands.registerCommand('moopi.askClipboard', () => assistant.askClipboard(assistantContext(context, api))),
   );
