@@ -132,7 +132,7 @@
       "view/title": [
         {
           "command": "moopi.refresh",
-          "when": "view =~ /^moopi\\./",
+          "when": "view =~ /^moopi\\.(bugun|tasdiqlar|fayllar)$/",
           "group": "navigation"
         },
         {

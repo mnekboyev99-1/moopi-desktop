@@ -999,6 +999,8 @@ function activate(context) {
     if (!(await prepareWorkspace(context, api))) return; // the window reloads with ~/MOOPI open
     try { await vscode.commands.executeCommand('workbench.action.closeSidebar'); } catch (e) {}
     openApp(context, api);
+    try { await vscode.commands.executeCommand('workbench.action.joinAllGroups'); } catch (e) {} // an empty group left by an older version
+
     ping(context, api).catch(() => {});
     context.subscriptions.push(api.onChange(() => { if (api.token) { pingedAt = 0; ping(context, api).catch(() => {}); } }));
     setTimeout(() => checkUpdate(context, api, false), 20000);
