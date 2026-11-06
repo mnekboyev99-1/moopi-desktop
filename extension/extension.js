@@ -649,7 +649,7 @@ function sendState(context, api) {
     assistantVoice: context.globalState.get('moopi.assistantVoice') !== false, brain: claudeState === 'ready',
     launchAtLogin: !!context.globalState.get('moopi.launchAtLogin'), hotkey: String(context.globalState.get('moopi.hotkey') || ''),
     dictation: (platform.MAC || platform.WIN) ? dictation.state : 'unsupported', lastDictation: dictation.last,
-    assistant: assistant.current(), updating,
+    assistant: assistant.current(), updating, usageShare: usageShare.data,
     watchFolders: watch.folders(context), quickActions: quick.list(context, (api.me && api.me.language) || lang()),
     briefingAloud: context.globalState.get('moopi.briefingAloud') !== false, explorerMenu: !!context.globalState.get('moopi.explorerMenu') });
 }
@@ -937,6 +937,73 @@ function sweepTranscripts(context, api) {
   if (transcripts.pending.size) syncTranscript(context, api, [...transcripts.pending][0]);
 }
 
+/** What MOOPI takes of the person's Claude limits, read from Claude Code's own transcript files on this
+ *  computer (no request to Anthropic, no credentials): every answer's tokens in ~/MOOPI's sessions against
+ *  every other project's, weighted by the model's price, over the last 7 days and the last 5 hours. Files are
+ *  read from where the last scan stopped (offsets in globalState); the sums live in hour buckets. Approximate:
+ *  Anthropic's own limit units are not published and other devices are not seen. */
+const usageShare = { data: null, busy: false };
+const USAGE_PRICE = { // USD per million tokens: input, output — the weight of a model against the limits
+  'claude-fable-5-1': [10, 50], 'claude-opus-5-5': [4, 20], 'claude-opus-5': [5, 25], 'claude-opus-4-8': [5, 25],
+  'claude-sonnet-5-5': [2, 10], 'claude-sonnet-5': [2, 10], 'claude-haiku-5-5': [0.1, 0.5] };
+function usagePrice(model) {
+  const m = String(model || '');
+  for (const k of Object.keys(USAGE_PRICE)) if (m.startsWith(k)) return USAGE_PRICE[k];
+  return m.includes('haiku') ? [0.1, 0.5] : m.includes('sonnet') ? [2, 10] : m.includes('opus') ? [5, 25] : [10, 50];
+}
+async function scanUsage(context) {
+  if (usageShare.busy) return;
+  usageShare.busy = true;
+  try {
+    const root = path.join(require('os').homedir(), '.claude', 'projects');
+    const mine = transcriptDir();
+    const now = Date.now(), week = now - 7 * 864e5;
+    const offsets = Object.assign({}, context.globalState.get('moopi.usageOffsets') || {});
+    const buckets = Object.assign({}, context.globalState.get('moopi.usageBuckets') || {}); // hour → {m, o, mr, or}
+    for (const key of Object.keys(buckets)) if (Number(key) * 36e5 < week) delete buckets[key];
+    let dirs = []; try { dirs = fs.readdirSync(root); } catch (e) { return; }
+    for (const d of dirs) {
+      const dir = path.join(root, d);
+      const isMoopi = !!mine && path.resolve(dir) === path.resolve(mine);
+      let files = []; try { files = fs.readdirSync(dir); } catch (e) { continue; }
+      for (const f of files) {
+        if (!f.endsWith('.jsonl')) continue;
+        const file = path.join(dir, f);
+        let st; try { st = fs.statSync(file); } catch (e) { continue; }
+        if (st.mtimeMs < week) { delete offsets[file]; continue; }
+        const from = Math.min(offsets[file] === undefined ? Math.max(0, st.size - 16 * 1024 * 1024) : offsets[file], st.size);
+        if (st.size <= from) { offsets[file] = st.size; continue; }
+        const fd = fs.openSync(file, 'r'); const buf = Buffer.alloc(st.size - from);
+        try { fs.readSync(fd, buf, 0, buf.length, from); } finally { fs.closeSync(fd); }
+        const text = buf.toString('utf8'); const cut = text.lastIndexOf('\n');
+        offsets[file] = from + Buffer.byteLength(text.slice(0, cut + 1));
+        const seen = new Set();
+        for (const line of text.slice(0, cut).split('\n')) {
+          if (!line.includes('"usage"')) continue;
+          let e; try { e = JSON.parse(line); } catch (err) { continue; }
+          if (e.type !== 'assistant' || !e.message || !e.message.usage) continue;
+          const t = Date.parse(e.timestamp || ''); if (!(t >= week)) continue;
+          if (e.requestId) { if (seen.has(e.requestId)) continue; seen.add(e.requestId); } // one request, several blocks
+          const u = e.message.usage, [pi, po] = usagePrice(e.message.model);
+          const units = ((u.input_tokens || 0) + (u.cache_creation_input_tokens || 0) * 1.25 + (u.cache_read_input_tokens || 0) * 0.1) * pi + (u.output_tokens || 0) * po;
+          const b = buckets[Math.floor(t / 36e5)] || (buckets[Math.floor(t / 36e5)] = { m: 0, o: 0, mr: 0, or: 0 });
+          if (isMoopi) { b.m += units; b.mr += 1; } else { b.o += units; b.or += 1; }
+        }
+        await new Promise((r) => setImmediate(r)); // the host breathes between files
+      }
+    }
+    await context.globalState.update('moopi.usageOffsets', offsets);
+    await context.globalState.update('moopi.usageBuckets', buckets);
+    const sum = (since) => {
+      const out = { moopi: 0, other: 0, moopiRequests: 0, otherRequests: 0 };
+      for (const [k, b] of Object.entries(buckets)) if (Number(k) * 36e5 >= since) { out.moopi += b.m; out.other += b.o; out.moopiRequests += b.mr; out.otherRequests += b.or; }
+      out.share = out.moopi + out.other > 0 ? Math.round(100 * out.moopi / (out.moopi + out.other)) : null;
+      return out;
+    };
+    usageShare.data = { week: sum(week), five: sum(now - 5 * 36e5), at: now };
+  } finally { usageShare.busy = false; }
+}
+
 /** Windows: the talk key works from any program (platform.startHotkey); a press brings the window up and listens. */
 let hotkeyHelper = null;
 function armHotkey(context, api) {
@@ -1031,6 +1098,9 @@ function activate(context) {
   startSync(context, api);
   setTimeout(() => watchMoopi(context, api), 15000);
   setTimeout(() => sweepTranscripts(context, api), 30000);
+  setTimeout(() => scanUsage(context).then(() => sendState(context, api)).catch((e) => noteError('usage', e)), 45000);
+  const usageTimer = setInterval(() => scanUsage(context).then(() => sendState(context, api)).catch((e) => noteError('usage', e)), 15 * 60 * 1000);
+  context.subscriptions.push({ dispose: () => clearInterval(usageTimer) });
   const sweeps = setInterval(() => sweepTranscripts(context, api), 600000);
   context.subscriptions.push({ dispose: () => clearInterval(sweeps) }, api.onChange(() => { if (api.token) setTimeout(() => sweepTranscripts(context, api), 8000); }));
   context.subscriptions.push({ dispose: () => { clearInterval(timer); clearInterval(watchTimer); } });
