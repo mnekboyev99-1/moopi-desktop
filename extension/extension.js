@@ -575,6 +575,16 @@ function reportError(context, api, where, e) {
 
 /** Claude Code, from Open VSX, on the first start (the build ships MOOPI's extension; Claude's is theirs). */
 let claudeState = 'missing';
+function claudeInstalled() {
+  return !!(vscode.extensions.getExtension('Anthropic.claude-code') || vscode.extensions.getExtension('anthropic.claude-code'));
+}
+/** Is Claude Code there? Looked at each time, not taken from the start-up chain: on 07.11.2026 a Windows
+ *  window had Claude Code running while the flag still said "missing" (the chain that sets it never got
+ *  that far), so the voice question stayed at "O'ylayapman…" for good and Limit typed nothing. */
+function claudeIsReady() {
+  if (claudeState !== 'ready' && claudeState !== 'installing' && claudeInstalled()) claudeState = 'ready';
+  return claudeState === 'ready';
+}
 async function ensureClaude(context, api) {
   if (vscode.extensions.getExtension('Anthropic.claude-code') || vscode.extensions.getExtension('anthropic.claude-code')) { claudeState = 'ready'; if (api) sendState(context, api); return true; }
   claudeState = 'installing'; if (api) sendState(context, api);
@@ -644,9 +654,9 @@ function claudeVersion() {
 function pushToApp(msg) { if (appPanel) appPanel.webview.postMessage({ fromMoopiDesktop: true, ...msg }); }
 function sendState(context, api) {
   pushToApp({ moopi: 'state', platform: process.platform, arch: process.arch, appVersion: vscode.version,
-    extVersion: context.extension.packageJSON.version, claudeVersion: claudeVersion(), claudeState, voice: !!voice.on,
+    extVersion: context.extension.packageJSON.version, claudeVersion: claudeVersion(), claudeState: (claudeIsReady(), claudeState), voice: !!voice.on,
     voiceAway: context.globalState.get('moopi.voiceAway') !== false, voiceShort: context.globalState.get('moopi.voiceShort') !== false,
-    assistantVoice: context.globalState.get('moopi.assistantVoice') !== false, brain: claudeState === 'ready',
+    assistantVoice: context.globalState.get('moopi.assistantVoice') !== false, brain: claudeIsReady(),
     launchAtLogin: !!context.globalState.get('moopi.launchAtLogin'), hotkey: String(context.globalState.get('moopi.hotkey') || ''),
     dictation: (platform.MAC || platform.WIN) ? dictation.state : 'unsupported', lastDictation: dictation.last,
     assistant: assistant.current(), updating, usageShare: usageShare.data,
@@ -701,7 +711,8 @@ function assistantContext(context, api) {
     reportError: (where, e) => reportError(context, api, where, e),
     sendState: () => sendState(context, api),
     assistantVoice: () => context.globalState.get('moopi.assistantVoice') !== false,
-    claudeReady: () => claudeState === 'ready',
+    claudeReady: () => claudeIsReady(),
+    claudeState: () => claudeState,
     osNotify,
   };
   ctx.onReport = (kind, text, tool, final, asUser) => assistant.report(ctx, kind, text, tool, final, asUser);

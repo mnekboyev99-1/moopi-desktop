@@ -147,8 +147,12 @@ async function transcribe(ctx, file) {
 
 // ---------- the question goes into Claude's own panel; the answer comes back through its transcript ----------
 async function askText(ctx, text) {
-  if (!text) return;
-  if (!ctx.claudeReady()) { note(ctx, ctx.t('as_no_brain')); return; }
+  if (!text) { phase(ctx, 'idle'); return; }
+  if (!ctx.claudeReady()) {  // never left at "O'ylayapman…": back to rest, said, and in the log
+    phase(ctx, 'idle'); ctx.sendState();
+    ctx.noteError('ask', 'Claude Code not ready (' + ctx.claudeState() + ')');
+    note(ctx, ctx.t('as_no_brain')); return;
+  }
   const image = state.pendingImage; state.pendingImage = null;
   post({ kind: 'detach' });
   await typeToPanel(ctx, text, image);
@@ -179,7 +183,7 @@ async function typeToPanel(ctx, text, image) {
 /** A command of Claude's own (/usage: the account's limits) typed into the panel; no answer is awaited —
  *  Claude shows it in a window of its own. */
 async function slash(ctx, command) {
-  if (!ctx.claudeReady()) { note(ctx, ctx.t('as_no_brain')); return; }
+  if (!ctx.claudeReady()) { ctx.noteError('slash', 'Claude Code not ready (' + ctx.claudeState() + ')'); note(ctx, ctx.t('as_no_brain')); return; }
   if (state.typing) { note(ctx, ctx.t('quick_busy')); return; }
   state.typing = true;
   try {
