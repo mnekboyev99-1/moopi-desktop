@@ -533,6 +533,30 @@ function noteError(where, e) {
   const line = `${new Date().toISOString()} ${where}: ${String((e && e.stack) || e).slice(0, 800)}`;
   ownErrors.push(line); if (ownErrors.length > 100) ownErrors.shift();
   console.error('[moopi]', line);
+  sendError(where, e);
+}
+
+/** Every error noted also goes to MOOPI by itself (POST /client/errors, backend app/client_errors.py): where,
+ *  the message and a few stack lines, the platform and version — never what the person said or wrote. The
+ *  same error once in ten minutes, at most 30 in a run; sending never throws. */
+let errorApi = null, errorExt = '';
+const errorsSent = new Map();
+let errorsCount = 0;
+function sendError(where, e) {
+  try {
+    if (!errorApi || errorsCount >= 30) return;
+    const message = String((e && e.message) || e).slice(0, 500);
+    const key = where + '|' + message.slice(0, 120), now = Date.now();
+    if (now - (errorsSent.get(key) || 0) < 10 * 60 * 1000) return;
+    errorsSent.set(key, now); errorsCount += 1;
+    const stack = String((e && e.stack) || '').split('\n').slice(1, 9).join('\n');
+    const headers = { 'Content-Type': 'application/json' };
+    if (errorApi.token) headers.Authorization = 'Bearer ' + errorApi.token;
+    fetch(`${errorApi.base}/client/errors`, { method: 'POST', headers, body: JSON.stringify({ errors: [{
+      source: 'desktop', kind: 'desktop', where: String(where).slice(0, 120), message, stack,
+      platform: process.platform, version: errorExt,
+    }] }) }).catch(() => {});
+  } catch (err) { /* reporting must never break what it reports on */ }
 }
 function tailOf(file, max) {
   try { const st = fs.statSync(file); const fd = fs.openSync(file, 'r'); const len = Math.min(st.size, max);
@@ -1045,6 +1069,7 @@ async function speakBriefing(context, api) {
 
 function activate(context) {
   const api = new Api(context);
+  errorApi = api; errorExt = String(context.extension.packageJSON.version || '');
   panels = ['bugun', 'tasdiqlar', 'fayllar'].map((id) => new Panel(id, api, context));
   for (const p of panels) context.subscriptions.push(vscode.window.registerWebviewViewProvider('moopi.' + p.id, p, { webviewOptions: { retainContextWhenHidden: true } }));
   const status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
