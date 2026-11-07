@@ -157,7 +157,25 @@ async function askText(ctx, text) {
   post({ kind: 'detach' });
   await typeToPanel(ctx, text, image);
 }
-/** Types [text] (and a picture before it) into Claude's panel and presses Enter. */
+/** What the person asked for (their voice, a button) is typed into MOOPI Desktop's own window: when another
+ *  window came to the front meanwhile, MOOPI's is brought back first; the keys themselves are sent only
+ *  while it is in front (platform.pasteAndEnter). */
+/** Cmd/Ctrl+V (+ Enter) into MOOPI Desktop's window. When the system could not be asked which window is in
+ *  front (reported), the old way still types — but only while the editor says its own window has the focus. */
+async function keys(ctx, submit) {
+  try { await platform.pasteAndEnter(submit); }
+  catch (e) {
+    if (!e || e.code !== 'guard' || !vscode.window.state.focused) throw e;
+    ctx.reportError('keys', e);
+    await platform.pasteAndEnterPlain(submit);
+  }
+}
+async function toFront() {
+  const st = await platform.frontState().catch(() => null);
+  if (st && !st.front) { await platform.bringOwnToFront(); await wait(500); }
+}
+/** Types [text] (and a picture before it) into Claude's panel and presses Enter.
+ *  Every key goes only into MOOPI Desktop's window; another window in front → nothing typed (code 'front'). */
 async function typeToPanel(ctx, text, image) {
   if (state.typing) { note(ctx, ctx.t('quick_busy')); return false; }
   state.typing = true;
@@ -165,16 +183,19 @@ async function typeToPanel(ctx, text, image) {
   phase(ctx, 'thinking', ctx.t('as_claude_thinking'));
   ctx.sendState();
   try {
+    await toFront();
     await ctx.openClaude();
     try { await vscode.commands.executeCommand('claude-vscode.focus'); } catch (e) {}
     await wait(400);
-    if (image) { await platform.copyImage(image); await platform.pasteAndEnter(false); await wait(600); }
+    if (image) { await platform.copyImage(image); await keys(ctx, false); await wait(600); }
     await vscode.env.clipboard.writeText(text);
-    await platform.pasteAndEnter(true);
+    await keys(ctx, true);
     expect(ctx);
     return true;
   } catch (e) {
-    phase(ctx, 'idle'); ctx.reportError('type', e);
+    phase(ctx, 'idle');
+    if (e && e.code === 'front') { await vscode.env.clipboard.writeText(text).catch(() => {}); note(ctx, ctx.t('as_not_front')); return false; }
+    ctx.reportError('type', e);
     if (e && e.code === 'ax') { note(ctx, ctx.t('as_need_ax')); platform.openAccessibility(); }
     else note(ctx, ctx.t('as_failed'));
     return false;
@@ -187,13 +208,15 @@ async function slash(ctx, command) {
   if (state.typing) { note(ctx, ctx.t('quick_busy')); return; }
   state.typing = true;
   try {
+    await toFront();
     await ctx.openClaude();
     try { await vscode.commands.executeCommand('claude-vscode.focus'); } catch (e) {}
     await wait(400);
     await vscode.env.clipboard.writeText(command);
-    await platform.pasteAndEnter(true);
+    await keys(ctx, true);
     note(ctx, ctx.t('as_usage_sent'), 'info');
   } catch (e) {
+    if (e && e.code === 'front') { note(ctx, ctx.t('as_not_front')); return; }
     ctx.reportError('slash', e);
     if (e && e.code === 'ax') { note(ctx, ctx.t('as_need_ax')); platform.openAccessibility(); } else note(ctx, ctx.t('as_failed'));
   } finally { state.typing = false; }

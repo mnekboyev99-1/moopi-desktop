@@ -107,9 +107,13 @@ test("the morning: the routine once claude.ai is connected, Desktop writes when 
   assert.strictEqual(morning.decide({ me, today: { briefing: { is_today: true } }, state: { offeredAt: Date.now() }, now: at('08:00') }), null);
   assert.strictEqual(morning.decide({ me, today: none, state: {}, now: at('06:00') }), 'offerConnect');
   const web = { ...me, claude_web_at: '2026-11-07T20:00:00' };
-  assert.strictEqual(morning.decide({ me: web, today: none, state: {}, now: at('06:00') }), 'setupRoutine');
-  assert.strictEqual(morning.decide({ me: web, today: none, state: { routineSetupFor: 5 }, now: at('07:10') }), null, 'the routine has 30 minutes');
-  assert.strictEqual(morning.decide({ me: web, today: none, state: { routineSetupFor: 5 }, now: at('07:31') }), 'write');
+  assert.strictEqual(morning.ROUTINES_OPEN, false, 'routines reach MOOPI only once it is in Anthropic\'s directory');
+  assert.strictEqual(morning.decide({ me: web, today: none, state: {}, now: at('06:00') }), null, 'claude.ai connected: no offer, no routine yet');
+  assert.strictEqual(morning.decide({ me: web, today: none, state: {}, now: at('07:05') }), 'write', 'Desktop writes it, no waiting for a routine');
+  const open = { routinesOpen: true };
+  assert.strictEqual(morning.decide({ me: web, today: none, state: {}, now: at('06:00'), ...open }), 'setupRoutine');
+  assert.strictEqual(morning.decide({ me: web, today: none, state: { routineSetupFor: 5 }, now: at('07:10'), ...open }), null, 'the routine has 30 minutes');
+  assert.strictEqual(morning.decide({ me: web, today: none, state: { routineSetupFor: 5 }, now: at('07:31'), ...open }), 'write');
   assert.strictEqual(morning.decide({ me: { ...me, claude_key_end: 'abcd' }, today: none, state: {}, now: at('08:00') }), null, 'a key: the server writes it');
   assert.strictEqual(morning.decide({ me: { ...me, briefing_enabled: false }, today: none, state: {}, now: at('08:00') }), null);
 });

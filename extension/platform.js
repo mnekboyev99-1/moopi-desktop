@@ -218,7 +218,151 @@ function startHotkey(text, onPress) {
 // ---------- keystrokes: paste what is on the clipboard into the focused input, then Enter — the way a
 // dictation program types into any app. The request itself is then made by Claude Code's own panel, with the
 // person's own sign-in; MOOPI only did the typing. (macOS asks for Accessibility once.)
+// Every key goes only into MOOPI Desktop's own window (owner, 08.11.2026: "boshqa dasturga tushib qolishi
+// mumkin — yechim topish kerak"): right before each key the system is asked which window is in front, in the
+// same call that sends the key, and when it is not MOOPI Desktop's nothing is sent at all (code 'front').
+
+/** MOOPI Desktop's own windows: the extension host is a child of the app's main process, which owns them;
+ *  the app's bundle (macOS) or executable (Windows) is the second way to know them. */
+let ownOverride = null; // tests only
+function ownApp(exe = process.execPath || '', ppid = process.ppid, mac = MAC) {
+  if (ownOverride) return ownOverride;
+  const i = exe.indexOf('.app/');
+  return { pid: ppid, app: mac ? (i > 0 ? exe.slice(0, i + 4) : '') : exe };
+}
+function _setOwn(own) { ownOverride = own; }
+const GUARD_MAC = [
+  'on run argv',
+  'set wantPid to (item 1 of argv) as integer',
+  'set wantApp to item 2 of argv',
+  'set steps to item 3 of argv',
+  'if steps is "check" then',
+  'if my isOurs(wantPid, wantApp) then return "front"',
+  'return "back"',
+  'end if',
+  'repeat with s in (characters of steps)',
+  'if not my isOurs(wantPid, wantApp) then error "MOOPI_NOT_FRONT" number 9001',
+  'tell application "System Events"',
+  'if (s as text) is "v" then',
+  'keystroke "v" using command down',
+  'delay 0.25',
+  'else',
+  'key code 36',
+  'end if',
+  'end tell',
+  'end repeat',
+  'return "ok"',
+  'end run',
+  'on isOurs(wantPid, wantApp)',
+  'tell application "System Events"',
+  'set p to first application process whose frontmost is true',
+  'if unix id of p is wantPid then return true',
+  'if wantApp is not "" then',
+  'try',
+  'set f to POSIX path of (application file of p)',
+  'if f starts with wantApp then return true',
+  'end try',
+  'end if',
+  'end tell',
+  'return false',
+  'end isOurs',
+];
+const GUARD_PS = `param([int]$OwnPid, [string]$Exe, [string]$Steps)
+$sig = @'
+[DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+[DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint p);
+[StructLayout(LayoutKind.Sequential)] public struct LII { public uint cbSize; public uint dwTime; }
+[DllImport("user32.dll")] public static extern bool GetLastInputInfo(ref LII l);
+'@
+Add-Type -Namespace MoopiKeys -Name U -MemberDefinition $sig
+function Ours {
+  $p = [uint32]0
+  [void][MoopiKeys.U]::GetWindowThreadProcessId([MoopiKeys.U]::GetForegroundWindow(), [ref]$p)
+  if ($p -eq $OwnPid) { return $true }
+  try { return ((Get-Process -Id $p -ErrorAction Stop).Path -ieq $Exe) } catch { return $false }
+}
+if ($Steps -eq 'check') {
+  $l = New-Object MoopiKeys.U+LII
+  $l.cbSize = 8
+  [void][MoopiKeys.U]::GetLastInputInfo([ref]$l)
+  $now = ([long][Environment]::TickCount + 4294967296) % 4294967296
+  $idle = ($now - [long]$l.dwTime + 4294967296) % 4294967296
+  $front = 'back'
+  if (Ours) { $front = 'front' }
+  Write-Output ($front + ' ' + $idle)
+  exit 0
+}
+Add-Type -AssemblyName System.Windows.Forms
+foreach ($s in $Steps.ToCharArray()) {
+  if (-not (Ours)) { Write-Output 'MOOPI_NOT_FRONT'; exit 9 }
+  if ($s -eq 'v') { [System.Windows.Forms.SendKeys]::SendWait('^v'); Start-Sleep -Milliseconds 250 }
+  else { [System.Windows.Forms.SendKeys]::SendWait('{ENTER}') }
+}
+Write-Output 'ok'
+`;
+function guardScript() {
+  const file = path.join(tmp(), 'moopi-keys.ps1');
+  try { if (fs.readFileSync(file, 'utf8') === GUARD_PS) return file; } catch (e) {}
+  fs.writeFileSync(file, GUARD_PS);
+  return file;
+}
+function guardWin(steps) {
+  const own = ownApp();
+  return new Promise((resolve, reject) => {
+    cp.execFile('powershell', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', guardScript(), '-OwnPid', String(own.pid), '-Exe', own.app, '-Steps', steps],
+      { windowsHide: true }, (e, out, errText) => {
+        const text = String(out || '').trim();
+        if (/MOOPI_NOT_FRONT/.test(text)) { const d = new Error('MOOPI Desktop is not the window in front'); d.code = 'front'; return reject(d); }
+        if (e) { const d = new Error('key guard: ' + String(errText || e.message).slice(0, 300)); d.code = 'guard'; return reject(d); }
+        resolve(text);
+      });
+  });
+}
+async function guardMac(steps) {
+  const own = ownApp();
+  try {
+    return await run('/usr/bin/osascript', [...GUARD_MAC.flatMap((line) => ['-e', line]), String(own.pid), own.app, steps]);
+  } catch (e) {
+    const m = String(e.message);
+    if (/MOOPI_NOT_FRONT|9001/.test(m)) { const d = new Error('MOOPI Desktop is not the window in front'); d.code = 'front'; throw d; }
+    if (/assistive access|not allowed|1002|-1743/i.test(m)) { const d = new Error('accessibility not allowed'); d.code = 'ax'; throw d; }
+    const d = new Error('key guard: ' + m); d.code = 'guard'; throw d;
+  }
+}
+/** Is MOOPI Desktop's window the one in front, and how long since the person last touched the keyboard or
+ *  mouse anywhere (seconds)? {front, idle}; idle is null when the system does not say. */
+async function frontState() {
+  if (MAC) {
+    const front = (await guardMac('check')) === 'front';
+    let idle = null;
+    try { const m = /"HIDIdleTime"\s*=\s*(\d+)/.exec(await run('/usr/sbin/ioreg', ['-c', 'IOHIDSystem', '-d', '4'])); if (m) idle = Number(m[1]) / 1e9; } catch (e) {}
+    return { front, idle };
+  }
+  if (WIN) {
+    const [front, ms] = (await guardWin('check')).split(/\s+/);
+    return { front: front === 'front', idle: ms !== undefined && !isNaN(+ms) ? +ms / 1000 : null };
+  }
+  return { front: false, idle: null };
+}
+/** MOOPI Desktop's window to the front — only for something the person asked for themselves (their voice,
+ *  a button they pressed); never for what MOOPI does by itself. */
+async function bringOwnToFront() {
+  const own = ownApp();
+  try {
+    if (MAC) await run('/usr/bin/osascript', ['-e', `tell application "System Events" to set frontmost of (first application process whose unix id is ${Number(own.pid)}) to true`]);
+    else if (WIN) await ps(`[void](New-Object -ComObject WScript.Shell).AppActivate(${Number(own.pid)})`);
+  } catch (e) {}
+}
+/** Cmd/Ctrl+V (and Enter when [submit]) into MOOPI Desktop's window; nothing when another window is in front. */
 async function pasteAndEnter(submit) {
+  const steps = submit ? 've' : 'v';
+  if (MAC) { await guardMac(steps); return; }
+  if (WIN) { await guardWin(steps); return; }
+  throw new Error('typing: unsupported platform');
+}
+/** The keys without asking the system which window is in front — only when the check itself could not run
+ *  (code 'guard', reported) and the editor says its own window has the focus: never worse than before 0.9.6. */
+async function pasteAndEnterPlain(submit) {
   if (MAC) {
     try {
       await run('/usr/bin/osascript', ['-e', 'tell application "System Events" to keystroke "v" using command down',
@@ -235,5 +379,17 @@ async function pasteAndEnter(submit) {
   }
   throw new Error('typing: unsupported platform');
 }
+/** Enter alone, the old way (see pasteAndEnterPlain). */
+async function pressEnterPlain() {
+  if (MAC) { await run('/usr/bin/osascript', ['-e', 'tell application "System Events" to key code 36']); return; }
+  if (WIN) { await ps("Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('{ENTER}')"); return; }
+  throw new Error('typing: unsupported platform');
+}
+/** Enter alone, into MOOPI Desktop's window (the text is already in Claude's input). */
+async function pressEnter() {
+  if (MAC) { await guardMac('e'); return; }
+  if (WIN) { await guardWin('e'); return; }
+  throw new Error('typing: unsupported platform');
+}
 function openAccessibility() { if (MAC) cp.execFile('/usr/bin/open', ['x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility'], () => {}); }
-module.exports = { WIN, MAC, startRecording, screenshot, clipboardImage, copyImage, play, activateWindow, openPrivacy, openAccessibility, explorerMenu, startHotkey, parseHotkey, pasteAndEnter, ps, run };
+module.exports = { WIN, MAC, startRecording, screenshot, clipboardImage, copyImage, play, activateWindow, openPrivacy, openAccessibility, explorerMenu, startHotkey, parseHotkey, pasteAndEnter, pasteAndEnterPlain, pressEnter, pressEnterPlain, frontState, bringOwnToFront, ownApp, _setOwn, ps, run };

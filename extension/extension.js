@@ -55,12 +55,16 @@ Object.assign(T.ru, {
   hotkey_bad: '\u0413\u043e\u0440\u044f\u0447\u0430\u044f \u043a\u043b\u0430\u0432\u0438\u0448\u0430 \u0432 \u0432\u0438\u0434\u0435 Ctrl+Alt+M', workspace_opening: '\u041e\u0442\u043a\u0440\u044b\u0432\u0430\u044e \u0440\u0430\u0431\u043e\u0447\u0443\u044e \u043f\u0430\u043f\u043a\u0443 MOOPI\u2026',
 });
 Object.assign(T.uz, {
-  connect_offer: "Kompyuter o'chiq bo'lsa ham ertalabki brifing kelsin desangiz, Claude'ni MOOPI'ga ulang: bitta oyna ochiladi, «Add» va «Davom etish» tugmalarini bosasiz.",
+  connect_offer: "Claude'ning telefon va veb ilovasida ham MOOPI (xotira, Telegram, fayllar) ishlasin desangiz, claude.ai'ni MOOPI'ga ulang: bitta oyna ochiladi, «Add» va «Davom etish» tugmalarini bosasiz.",
   connect_yes: 'Ulash', connect_failed: "Ulash havolasini ochib bo'lmadi: {e}",
+  morning_need_ax: "Ertalabki brifingni Claude'ga yozdirishim uchun Mac klaviatura ruxsatini (Accessibility) so'raydi: ochilgan oynada MOOPI Desktop'ni yoqing.",
+  open_settings: 'Sozlamalarni ochish',
 });
 Object.assign(T.ru, {
-  connect_offer: 'Чтобы утренний брифинг приходил и при выключенном компьютере, подключите Claude к MOOPI: откроется одно окно — нажмите «Add» и «Продолжить».',
+  connect_offer: 'Чтобы MOOPI (память, Telegram, файлы) работал и в приложении Claude на телефоне и в браузере, подключите claude.ai к MOOPI: откроется одно окно — нажмите «Add» и «Продолжить».',
   connect_yes: 'Подключить', connect_failed: 'Не удалось открыть ссылку подключения: {e}',
+  morning_need_ax: 'Чтобы Claude писал утренний брифинг, Mac нужен доступ к клавиатуре (Accessibility): в открывшемся окне включите MOOPI Desktop.',
+  open_settings: 'Открыть настройки',
 });
 Object.assign(T.uz, {
   as_ready: "Tayyorman. Gapiring yoki yozing.", as_listening: "Eshityapman… to‘xtatish uchun yana bosing", as_thinking: "O‘ylayapman…",
@@ -81,6 +85,7 @@ Object.assign(T.uz, {
   quick_failed: "Bajarib bo'lmadi — yana urinib ko'ring.", briefing_title: "Ertalabki brifing", explorer_on: "Explorer menyusiga qo'shildi: «MOOPI'ga yuborish»",
   explorer_off: "Explorer menyusidan olib tashlandi", hotkey_taken: "Bu tugma band — boshqasini tanlang",
   as_need_ax: "Mac'ga klaviatura ruxsati kerak (Accessibility): ochilgan oynada MOOPI Desktop (yoki VSCodium) ni yoqing va qayta urinib ko'ring.",
+  as_not_front: "Boshqa oyna oldinda edi — Claude'ga yuborilmadi. Matn nusxalandi: MOOPI oynasida Claude'ga qo'ying (Ctrl+V / Cmd+V).",
   quick_sent: "Topshiriq Claude paneliga yuborildi — natija tayyor/ papkasiga tushadi va o'zi ochiladi.",
   watch_ask: "Yangi fayl: {f} — MOOPI o'qib, nima muhimligini aytsinmi?", watch_yes: "Ha, o'qi",
 });
@@ -103,6 +108,7 @@ Object.assign(T.ru, {
   quick_failed: "Не удалось — попробуйте ещё.", briefing_title: "Утренний брифинг", explorer_on: "Добавлено в меню Explorer: «Отправить в MOOPI»",
   explorer_off: "Убрано из меню Explorer", hotkey_taken: "Эта клавиша занята — выберите другую",
   as_need_ax: "Mac нужен доступ к клавиатуре (Accessibility): в открывшемся окне включите MOOPI Desktop (или VSCodium) и попробуйте снова.",
+  as_not_front: "Впереди было другое окно — в Claude не отправлено. Текст скопирован: вставьте его в Claude в окне MOOPI (Ctrl+V / Cmd+V).",
   quick_sent: "Задание отправлено в панель Claude — результат появится в tayyor/ и откроется сам.",
   watch_ask: "Новый файл: {f} — MOOPI прочитать и сказать главное?", watch_yes: "Да, прочитай",
 });
@@ -675,8 +681,10 @@ async function prepareWorkspace(context, api) {
     writeLocalSettings(context);
     const time = (api.me && api.me.briefing_time) || '07:00';
     fs.mkdirSync(path.join(WORKSPACE_DIR, '.claude', 'commands'), { recursive: true });
-    writeIfChanged(path.join(WORKSPACE_DIR, '.claude', 'commands', 'ertalabki-brifing.md'),
-      bundled('ertalabki-brifing.md').replace(/\{time\}/g, time).replace(/\{timezone\}/g, tz).replace(/\{cron\}/g, memory.cronFor(time, tz)));
+    if (morning.ROUTINES_OPEN) { // the routine's set-up, once routines can reach MOOPI (morning.js)
+      writeIfChanged(path.join(WORKSPACE_DIR, '.claude', 'commands', 'ertalabki-brifing.md'),
+        bundled('ertalabki-brifing.md').replace(/\{time\}/g, time).replace(/\{timezone\}/g, tz).replace(/\{cron\}/g, memory.cronFor(time, tz)));
+    }
     writeIfChanged(path.join(WORKSPACE_DIR, '.claude', 'commands', 'ertalabki-brifing-yoz.md'), bundled('ertalabki-brifing-yoz.md'));
     writeMcpConfig(context);
     const settingsPath = path.join(WORKSPACE_DIR, '.claude', 'settings.json');
@@ -776,6 +784,15 @@ function claudeBusy() {
   const dir = transcriptDir(); if (!dir) return false;
   try { return fs.readdirSync(dir).some((n) => n.endsWith('.jsonl') && Date.now() - fs.statSync(path.join(dir, n)).mtimeMs < 60000); } catch (e) { return false; }
 }
+/** Did a conversation of Claude's in ~/MOOPI get a new line after [since] (it took the command)? Waits up to [ms]. */
+async function claudeStartedSince(since, ms) {
+  const dir = transcriptDir(); if (!dir) return true; // nothing to look at: trust the keys
+  for (let waited = 0; waited <= ms; waited += 2000) {
+    try { if (fs.readdirSync(dir).some((n) => n.endsWith('.jsonl') && fs.statSync(path.join(dir, n)).mtimeMs > since)) return true; } catch (e) {}
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+  return false;
+}
 async function connectClaudeAi(context, api) {
   try {
     const r = await fetch(connectorUrl() + '/connector/desktop-link', { method: 'POST', headers: { Authorization: 'Bearer ' + api.token } });
@@ -787,10 +804,12 @@ async function connectClaudeAi(context, api) {
     vscode.window.showWarningMessage(t('connect_failed').replace('{e}', String(e.message || e)));
   }
 }
-let morningBusy = false;
+let morningBusy = false, morningCheckedAt = 0;
+let morningPending = null, morningTimer = null, morningTyping = false;
+let morningTried = { key: '', tries: 0 }; // tries of today's command: 3 at most a day
 async function morningCheck(context, api) {
   if (morningBusy || !api.token) return;
-  morningBusy = true;
+  morningBusy = true; morningCheckedAt = Date.now();
   try {
     const me = await api.get('/auth/me');
     if (!me) return;
@@ -799,28 +818,91 @@ async function morningCheck(context, api) {
     const state = context.globalState.get('moopi.morning') || {};
     const today = await api.get('/today').catch(() => null);
     const action = morning.decide({ me, today, state });
-    if (!action) return;
+    if (!action) { morningPending = null; return; }
     if (action === 'offerConnect') {
       await context.globalState.update('moopi.morning', { ...state, offeredAt: Date.now() });
       const pick = await vscode.window.showInformationMessage(t('connect_offer'), t('connect_yes'), t('later'));
       if (pick === t('connect_yes')) await connectClaudeAi(context, api);
       return;
     }
-    if (!vscode.window.state.focused || !claudeIsReady() || claudeBusy()) return;
     const command = action === 'setupRoutine' ? '/ertalabki-brifing' : '/ertalabki-brifing-yoz';
-    // in a conversation of its own, so nothing the person had open (or a draft there) is mixed in
-    try { await openClaude(); await vscode.commands.executeCommand('claude-vscode.newConversation'); } catch (e) {}
-    await new Promise((r) => setTimeout(r, 1200));
-    const typed = await assistant.typeToPanel(assistantContext(context, api), command);
-    if (!typed) return;
-    const done = action === 'setupRoutine' ? { routineSetupFor: me.id } : { wroteOn: morning.localNow(me.timezone || 'Asia/Tashkent').date };
-    await context.globalState.update('moopi.morning', { ...state, ...done });
+    const date = morning.localNow(me.timezone || 'Asia/Tashkent').date;
+    if (morningTried.key !== command + ' ' + date) morningTried = { key: command + ' ' + date, tries: 0 };
+    if (morningTried.tries >= 3) { morningPending = null; return; }
+    morningPending = { command, done: action === 'setupRoutine' ? { routineSetupFor: me.id } : { wroteOn: date }, until: Date.now() + 10 * 60000 };
   } catch (e) { noteError('morning', e); } finally { morningBusy = false; }
+  if (morningPending) await morningType(context, api);
+}
+/** The morning command goes into Claude only when nothing of the person's can be hit (owner, 08.11.2026:
+ *  "boshqa dasturga tushib qolishi mumkin — yechim topish kerak"): MOOPI Desktop's window is the one in front
+ *  (MOOPI never brings it forward for this) and the person has not touched the keyboard or mouse for a few
+ *  seconds; the command is put into the input box of a new conversation by Claude Code itself (no clipboard,
+ *  no keys), and the one key left, Enter, is sent only while the window is still in front. Otherwise it waits:
+ *  for the window to come forward, or a little while when the person is busy in it. */
+async function morningType(context, api) {
+  clearTimeout(morningTimer); morningTimer = null;
+  const p = morningPending;
+  if (!p || morningTyping) return;
+  if (Date.now() > p.until) { morningPending = null; return; }
+  const later = (ms) => { morningTimer = setTimeout(() => morningType(context, api), ms); };
+  if (!claudeIsReady() || claudeBusy()) return later(60000);
+  let st = null, plain = false;
+  try { st = await platform.frontState(); } catch (e) {
+    if (!e || e.code !== 'guard') { morningNoAccess(context, e); return; }
+    // the system could not be asked (reported): the editor's own word on its focus, as before 0.9.6
+    noteError('morning: front', e); plain = true; st = { front: vscode.window.state.focused, idle: null };
+  }
+  if (!st.front) return; // the window coming forward (onDidChangeWindowState) or the next round tries again
+  if (st.idle !== null && st.idle < morning.IDLE_BEFORE) return later(20000);
+  morningTyping = true;
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  try {
+    // The first try: Claude Code puts the command into a new conversation's input box itself. When that did
+    // not start anything, the next try pastes it there (the paste, too, only into this window).
+    const prefill = !morningTried.tries;
+    morningTried.tries += 1;
+    try {
+      if (prefill) await vscode.commands.executeCommand('claude-vscode.editor.open', undefined, p.command, undefined, undefined, undefined, { programmatic: 'honor-preferred-location' });
+      else { await openClaude(); await vscode.commands.executeCommand('claude-vscode.newConversation'); }
+    } catch (e) { noteError('morning: open', e); return later(10 * 60000); }
+    await wait(1500);
+    try { await vscode.commands.executeCommand('claude-vscode.focus'); } catch (e) {}
+    await wait(400);
+    const since = Date.now();
+    try {
+      if (plain && !vscode.window.state.focused) { morningTried.tries -= 1; return later(60000); }
+      if (!prefill) await vscode.env.clipboard.writeText(p.command);
+      if (prefill) await (plain ? platform.pressEnterPlain() : platform.pressEnter());
+      else await (plain ? platform.pasteAndEnterPlain(true) : platform.pasteAndEnter(true));
+    } catch (e) {
+      if (e && e.code === 'front') { morningTried.tries -= 1; return later(60000); } // another window came forward; nothing was sent
+      morningNoAccess(context, e); return;
+    }
+    if (!(await claudeStartedSince(since, 20000))) {
+      noteError('morning: Claude did not take the command', new Error(`${p.command}, try ${morningTried.tries}${prefill ? ' (prefill)' : ' (paste)'}`));
+      morningPending = null; // the next round (5 minutes) tries again, the paste way
+      return;
+    }
+    morningPending = null;
+    await context.globalState.update('moopi.morning', { ...(context.globalState.get('moopi.morning') || {}), ...p.done });
+  } finally { morningTyping = false; }
+}
+/** macOS without the keyboard permission: said once a day, with the button to the system's pane. */
+async function morningNoAccess(context, e) {
+  if (!e || e.code !== 'ax') { noteError('morning: keys', e); return; }
+  const today = new Date().toISOString().slice(0, 10);
+  if (context.globalState.get('moopi.morningAxOn') === today) return;
+  await context.globalState.update('moopi.morningAxOn', today);
+  const pick = await vscode.window.showInformationMessage(t('morning_need_ax'), t('open_settings'));
+  if (pick) platform.openAccessibility();
 }
 function startMorning(context, api) {
   const every = setInterval(() => morningCheck(context, api), 5 * 60000);
-  context.subscriptions.push({ dispose: () => clearInterval(every) },
-    vscode.window.onDidChangeWindowState((st) => { if (st.focused) setTimeout(() => morningCheck(context, api), 3000); }),
+  context.subscriptions.push({ dispose: () => { clearInterval(every); clearTimeout(morningTimer); } },
+    vscode.window.onDidChangeWindowState((st) => {
+      if (!st.focused) return;
+      setTimeout(() => { if (morningPending) morningType(context, api); else if (Date.now() - morningCheckedAt > 2 * 60000) morningCheck(context, api); }, 3000);
+    }),
     vscode.commands.registerCommand('moopi.connectClaudeAi', () => connectClaudeAi(context, api)));
   setTimeout(() => morningCheck(context, api), 90000);
 }
@@ -1300,4 +1382,4 @@ function activate(context) {
   context.subscriptions.push({ dispose: () => { clearInterval(timer); clearInterval(watchTimer); } });
 }
 function deactivate() {}
-module.exports = { activate, deactivate, _test: { prepareWorkspace, subscriptionNote, writeLocalSettings, parseTurn } };
+module.exports = { activate, deactivate, _test: { prepareWorkspace, subscriptionNote, writeLocalSettings, parseTurn, morningCheck } };

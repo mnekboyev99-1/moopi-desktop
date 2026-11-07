@@ -1,17 +1,24 @@
 // The morning briefing of a person on a Claude subscription, inside it (0.9.6; owner, 07.11.2026: "agar Claude
 // ulanmagan bulsa brifingni desktopni uzi qilsin. agar ulangan bulsa har ertalab offline bulsa ham qilsin").
-// - claude.ai has MOOPI connected (the account's claude_web_at): a routine there writes it every morning, the
-//   computer on or off. Desktop starts its setting-up once by itself (/ertalabki-brifing in Claude's panel;
-//   Claude asks the person before it creates anything).
+// - claude.ai has MOOPI connected (the account's claude_web_at) and routines can reach MOOPI (ROUTINES_OPEN,
+//   not yet): a routine there writes it every morning, the computer on or off. Desktop starts its setting-up
+//   once by itself (/ertalabki-brifing in Claude's panel; Claude asks the person before it creates anything).
 // - Not connected — or the routine's briefing hasn't come 30 minutes after the time: Desktop's Claude writes it
 //   in its panel (/ertalabki-brifing-yoz), while the person is at the window, before 13:00 as the server does.
 // - Not connected: once a week at most, Desktop offers to connect claude.ai in one click (connector's
 //   /connector/desktop-link → claude.ai's Add-connector dialog prefilled → "Continue", no password).
-// Typing into Claude's panel happens only while MOOPI Desktop's window is in front and Claude is not answering,
-// so the keys never land in another program.
+// The command goes into Claude only while MOOPI Desktop's window is in front, the person has not typed or clicked
+// for IDLE_BEFORE seconds and Claude is not answering; Claude Code itself puts it into a new conversation's input
+// box, and Enter is sent only while the window is still in front (extension.js morningType, platform.js) — so
+// nothing ever lands in another program.
 const LATEST_MINUTE = 13 * 60; // the server's LATEST_HOUR: a briefing after it waits for tomorrow
 const ROUTINE_GRACE = 30; // minutes the routine has before Desktop writes the briefing itself
 const OFFER_EVERY = 7 * 86400000;
+// Claude's routines (claude.ai) are offered only connectors from Anthropic's directory: a connector added by
+// hand — MOOPI's, tested 06.11.2026 — is not attached to them, so a routine could not reach MOOPI. Until MOOPI
+// is listed there (asked 06.11), no routine is set up and Desktop writes the briefing itself.
+const ROUTINES_OPEN = false;
+const IDLE_BEFORE = 15; // seconds without a key or a click before MOOPI puts the morning command into Claude
 
 function onSubscription(me) { return !!me && me.billing === 'own' && !me.claude_key_end; }
 
@@ -28,15 +35,15 @@ function minutesOf(hhmm) { const [h, m] = String(hhmm || '07:00').split(':').map
 
 /** What to do now: 'setupRoutine', 'write', 'offerConnect' or null. [today] is GET /today; [state] what this
  *  installation did already ({routineSetupFor, wroteOn, offeredAt}). */
-function decide({ me, today, state, now = new Date() }) {
+function decide({ me, today, state, now = new Date(), routinesOpen = ROUTINES_OPEN }) {
   if (!onSubscription(me) || me.briefing_enabled === false) return null;
-  const web = !!me.claude_web_at;
+  const web = routinesOpen && !!me.claude_web_at;
   if (web && state.routineSetupFor !== me.id) return 'setupRoutine';
   const { date, minute } = localNow(me.timezone || 'Asia/Tashkent', now);
   const has = !!(today && today.briefing && today.briefing.is_today);
   if (!has && state.wroteOn !== date && minute >= minutesOf(me.briefing_time) + (web ? ROUTINE_GRACE : 0) && minute < LATEST_MINUTE) return 'write';
-  if (!web && (!state.offeredAt || now.getTime() - state.offeredAt > OFFER_EVERY)) return 'offerConnect';
+  if (!me.claude_web_at && (!state.offeredAt || now.getTime() - state.offeredAt > OFFER_EVERY)) return 'offerConnect';
   return null;
 }
 
-module.exports = { onSubscription, localNow, minutesOf, decide, ROUTINE_GRACE };
+module.exports = { onSubscription, localNow, minutesOf, decide, ROUTINE_GRACE, IDLE_BEFORE, ROUTINES_OPEN };
