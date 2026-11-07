@@ -2,7 +2,7 @@
   "name": "moopi-desktop",
   "displayName": "MOOPI",
   "description": "MOOPI: Bugun, Tasdiqlar, Fayllar panellari, ovozli yordamchi — Claude Code bilan bir oynada.",
-  "version": "0.9.4",
+  "version": "0.9.5",
   "publisher": "moopi",
   "license": "UNLICENSED",
   "repository": {
@@ -166,12 +166,12 @@
       "properties": {
         "moopi.apiUrl": {
           "type": "string",
-          "default": "https://sessions.moopi.uz/moopi-api",
+          "default": "https://moopi.uz/api",
           "description": "MOOPI API manzili."
         },
         "moopi.appUrl": {
           "type": "string",
-          "default": "https://sessions.moopi.uz/app/",
+          "default": "https://moopi.uz/app/",
           "description": "MOOPI ilovasining veb manzili (oynaning o'rtasida ochiladi)."
         },
         "moopi.language": {

@@ -190,7 +190,7 @@ async function refreshAll() { for (const p of panels) await p.refresh(); }
 /** The MOOPI app (its web build, in desktop mode) in the editor area: the window IS the MOOPI app. The
  *  app hands its sign-in token over and asks for Claude through messages; nothing else crosses. */
 let appPanel = null;
-function appUrl() { return vscode.workspace.getConfiguration('moopi').get('appUrl', 'https://sessions.moopi.uz/app/').replace(/\/?$/, '/'); }
+function appUrl() { return vscode.workspace.getConfiguration('moopi').get('appUrl', 'https://moopi.uz/app/').replace(/\/?$/, '/'); }
 function openApp(context, api) {
   if (appPanel) { appPanel.reveal(vscode.ViewColumn.One, true); return appPanel; }
   const url = appUrl(), origin = new URL(url).origin;
@@ -225,7 +225,11 @@ window.addEventListener('message', (e) => {
 </script></body></html>`;
   appPanel.webview.onDidReceiveMessage(async (m) => {
     try {
-      if (m.moopi === 'ready') { sendState(context, api); setTimeout(() => openClaude().catch(() => {}), 1500); return; }
+      if (m.moopi === 'ready') {
+        // the app's own sign-in lives in its origin: a window signed in hands it over (moopi.uz since 0.9.5)
+        if (api.token) pushToApp({ moopi: 'token', token: api.token });
+        sendState(context, api); setTimeout(() => openClaude().catch(() => {}), 1500); return;
+      }
       if (m.moopi === 'getState') sendState(context, api);
       else if (m.moopi === 'openClaude') await openClaude();
       else if (m.moopi === 'giveFile') await giveFile(context, api, m.id, m.name);
@@ -522,7 +526,7 @@ async function applyTheme(context, mode) {
 }
 
 /** Logs of this window: the extension host's folder (ours and Claude Code's output) and the main logs. */
-const LOGS_URL = 'https://sessions.moopi.uz/api/desktop/logs';
+const LOGS_URL = 'https://moopi.uz/api/desktop/logs'; // sessions.moopi.uz until 0.9.5 (07.11.2026: wound down into moopi.uz)
 const ownErrors = [];
 let logsSentAt = 0, logsSendCount = 0;
 function noteError(where, e) {
