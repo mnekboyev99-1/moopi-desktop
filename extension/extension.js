@@ -6,6 +6,7 @@ const platform = require('./platform');
 const assistant = require('./assistant');
 const watch = require('./watch');
 const quick = require('./quick');
+const memory = require('./memory');
 const fs = require('fs');
 const path = require('path');
 
@@ -658,7 +659,14 @@ async function prepareWorkspace(context, api) {
     const code = (api.me && api.me.language) || lang();
     const tz = (api.me && api.me.timezone) || Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Tashkent';
     writeIfChanged(path.join(WORKSPACE_DIR, 'CLAUDE.md'),
-      bundled('CLAUDE.md').replace(/\{language\}/g, code === 'ru' ? 'rus tili' : "o'zbek tili (lotin)").replace(/\{timezone\}/g, tz));
+      bundled('CLAUDE.md').replace(/\{language\}/g, code === 'ru' ? 'rus tili' : "o'zbek tili (lotin)").replace(/\{timezone\}/g, tz)
+        .replace(/\{subscription\}/g, await subscriptionNote(api)));
+    fs.mkdirSync(path.join(WORKSPACE_DIR, memory.DIR_NAME), { recursive: true });
+    writeLocalSettings(context);
+    const time = (api.me && api.me.briefing_time) || '07:00';
+    fs.mkdirSync(path.join(WORKSPACE_DIR, '.claude', 'commands'), { recursive: true });
+    writeIfChanged(path.join(WORKSPACE_DIR, '.claude', 'commands', 'ertalabki-brifing.md'),
+      bundled('ertalabki-brifing.md').replace(/\{time\}/g, time).replace(/\{timezone\}/g, tz).replace(/\{cron\}/g, memory.cronFor(time, tz)));
     if (!fs.existsSync(path.join(WORKSPACE_DIR, '.mcp.json'))) fs.writeFileSync(path.join(WORKSPACE_DIR, '.mcp.json'), bundled('mcp.json'));
     const settingsPath = path.join(WORKSPACE_DIR, '.claude', 'settings.json');
     let own = {}; try { own = JSON.parse(fs.readFileSync(settingsPath, 'utf8')); } catch (e) {}
@@ -671,6 +679,74 @@ async function prepareWorkspace(context, api) {
   vscode.window.setStatusBarMessage(t('workspace_opening'), 5000);
   await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(WORKSPACE_DIR), { forceNewWindow: false });
   return false; // the window reloads with the folder; activate() runs again
+}
+
+/** A person on a Claude subscription (own billing, no key in MOOPI): MOOPI's server neither learns from their
+ *  conversations nor writes their briefing, so Claude is told it keeps the memory itself and — when no briefing
+ *  came in the last two days — to offer the briefing routine (/ertalabki-brifing) once. */
+function onSubscription(me) { return !!me && me.billing === 'own' && !me.claude_key_end; }
+async function subscriptionNote(api) {
+  if (!onSubscription(api.me)) return '';
+  let recent = false;
+  try {
+    const b = (await api.get('/today') || {}).briefing;
+    const at = b && String(b.created_at || '');
+    recent = !!at && Date.now() - Date.parse(/(Z|[+-]\d\d:?\d\d)$/.test(at) ? at : at + 'Z') < 2 * 86400000;
+  } catch (e) {}
+  return "\nFoydalanuvchi Claude obunasi bilan ishlaydi: MOOPI serveri uning suhbatlaridan o'zi o'rganmaydi va brifing " +
+    "yozmaydi — xotirani faqat sen yuritasan, shuning uchun yozishni unutma." +
+    (recent ? '' : " Ertalabki brifing hali kelmayapti: suhbat mos kelganda bir marta taklif qil — «/ertalabki-brifing» buyrug'i " +
+      "uni Claude'ning rejali vazifasi qilib sozlaydi (har kuni ertalab, obuna ichida, kompyuter o'chiq bo'lsa ham).") + '\n';
+}
+
+/** Claude Code's settings for ~/MOOPI that only this computer has (.claude/settings.local.json): the memory
+ *  folder, auto-dream and the Stop hook (memory.js). The person's own entries there stay; a file that is not
+ *  valid JSON is theirs and is left alone. */
+function hookToken(context) {
+  let token = context.globalState.get('moopi.hookToken');
+  if (!token) { token = require('crypto').randomBytes(16).toString('hex'); context.globalState.update('moopi.hookToken', token); }
+  return token;
+}
+function writeLocalSettings(context) {
+  const file = path.join(WORKSPACE_DIR, '.claude', 'settings.local.json');
+  let raw = null; try { raw = fs.readFileSync(file, 'utf8'); } catch (e) {}
+  let current = {};
+  if (raw !== null && raw.trim()) { try { current = JSON.parse(raw); } catch (e) { noteError('settings.local.json', e); return; } }
+  const port = context.globalState.get('moopi.hookPort') || 47821;
+  writeIfChanged(file, JSON.stringify(memory.localSettings(current, `http://127.0.0.1:${port}/stop`, hookToken(context)), null, 2) + '\n');
+}
+
+/** MOOPI's memory as Claude's own (memory.js): the xotira/ folder kept the same as MOOPI's memory — on a change
+ *  in the folder, every minute, when the window comes to the front, after a sign-in — and the Stop hook that
+ *  asks Claude to save what matters. */
+let memorySync = null;
+async function startMemory(context, api) {
+  const root = path.join(WORKSPACE_DIR, memory.DIR_NAME);
+  memorySync = new memory.MemorySync({ root, api,
+    store: { get: () => context.globalState.get('moopi.memsync'), set: (v) => context.globalState.update('moopi.memsync', v) },
+    log: (where, e) => { if (e) reportError(context, api, where, e); else console.log('[moopi]', where); } });
+  const run = () => { if (api.token && api.me) memorySync.sync().catch((e) => reportError(context, api, 'memorySync', e)); };
+  let timer = null;
+  const soon = () => { clearTimeout(timer); timer = setTimeout(run, 2500); };
+  const folder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
+  if (folder) {
+    const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(folder, memory.DIR_NAME + '/**'));
+    watcher.onDidCreate(soon); watcher.onDidChange(soon); watcher.onDidDelete(soon);
+    context.subscriptions.push(watcher);
+  }
+  const every = setInterval(run, 60000);
+  context.subscriptions.push({ dispose: () => { clearInterval(every); clearTimeout(timer); } },
+    api.onChange(() => { if (api.token) { setTimeout(run, 3000); prepareWorkspace(context, api).catch(() => {}); } }),
+    vscode.window.onDidChangeWindowState((st) => { if (st.focused) soon(); }));
+  setTimeout(run, 4000);
+  const started = await memory.startHookServer({ token: hookToken(context), memoryDir: root,
+    port: context.globalState.get('moopi.hookPort') || 47821, isOn: () => !!api.token, log: (where, e) => noteError(where, e) });
+  if (!started) { noteError('memoryHook', new Error('no free port on 127.0.0.1')); return; }
+  context.subscriptions.push({ dispose: () => started.server.close() });
+  if (started.port !== context.globalState.get('moopi.hookPort')) {
+    await context.globalState.update('moopi.hookPort', started.port);
+    writeLocalSettings(context);
+  }
 }
 
 /** What the app's Desktop section shows, sent after every change. */
@@ -926,7 +1002,7 @@ async function ping(context, api, error) {
 const transcripts = { pending: new Set(), timer: null, busy: false };
 function parseTurn(line) {
   let d; try { d = JSON.parse(line); } catch (e) { return null; }
-  if ((d.type !== 'user' && d.type !== 'assistant') || d.isSidechain || d.isMeta || !d.uuid) return null;
+  if ((d.type !== 'user' && d.type !== 'assistant') || d.isSidechain || d.isMeta || d.isCompactSummary || !d.uuid) return null;
   const c = d.message && d.message.content;
   let text = '';
   if (typeof c === 'string') text = c;
@@ -1115,6 +1191,7 @@ function activate(context) {
     await api.load(); showStatus();
     await applyLayout(context);
     if (!(await prepareWorkspace(context, api))) return; // the window reloads with ~/MOOPI open
+    startMemory(context, api).catch((e) => noteError('memory', e));
     try { await vscode.commands.executeCommand('workbench.action.closeSidebar'); } catch (e) {}
     openApp(context, api);
     try { await vscode.commands.executeCommand('workbench.action.joinAllGroups'); } catch (e) {} // an empty group left by an older version
@@ -1146,4 +1223,4 @@ function activate(context) {
   context.subscriptions.push({ dispose: () => { clearInterval(timer); clearInterval(watchTimer); } });
 }
 function deactivate() {}
-module.exports = { activate, deactivate };
+module.exports = { activate, deactivate, _test: { prepareWorkspace, subscriptionNote, writeLocalSettings, parseTurn } };
