@@ -7,6 +7,8 @@ const assistant = require('./assistant');
 const watch = require('./watch');
 const quick = require('./quick');
 const memory = require('./memory');
+const bridge = require('./bridge');
+const morning = require('./morning');
 const fs = require('fs');
 const path = require('path');
 
@@ -51,6 +53,14 @@ Object.assign(T.ru, {
   signed_in_google: '\u0412\u044b \u0432\u043e\u0448\u043b\u0438.', signin_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0432\u043e\u0439\u0442\u0438: {e}', launch_on: '\u0417\u0430\u043f\u0443\u0441\u043a \u0441 \u043a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440\u043e\u043c \u0432\u043a\u043b\u044e\u0447\u0451\u043d',
   launch_off: '\u0417\u0430\u043f\u0443\u0441\u043a \u0441 \u043a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440\u043e\u043c \u0432\u044b\u043a\u043b\u044e\u0447\u0435\u043d', hotkey_set: '\u0413\u043e\u0440\u044f\u0447\u0430\u044f \u043a\u043b\u0430\u0432\u0438\u0448\u0430: {k}', hotkey_cleared: '\u0413\u043e\u0440\u044f\u0447\u0430\u044f \u043a\u043b\u0430\u0432\u0438\u0448\u0430 \u0443\u0431\u0440\u0430\u043d\u0430',
   hotkey_bad: '\u0413\u043e\u0440\u044f\u0447\u0430\u044f \u043a\u043b\u0430\u0432\u0438\u0448\u0430 \u0432 \u0432\u0438\u0434\u0435 Ctrl+Alt+M', workspace_opening: '\u041e\u0442\u043a\u0440\u044b\u0432\u0430\u044e \u0440\u0430\u0431\u043e\u0447\u0443\u044e \u043f\u0430\u043f\u043a\u0443 MOOPI\u2026',
+});
+Object.assign(T.uz, {
+  connect_offer: "Kompyuter o'chiq bo'lsa ham ertalabki brifing kelsin desangiz, Claude'ni MOOPI'ga ulang: bitta oyna ochiladi, «Add» va «Davom etish» tugmalarini bosasiz.",
+  connect_yes: 'Ulash', connect_failed: "Ulash havolasini ochib bo'lmadi: {e}",
+});
+Object.assign(T.ru, {
+  connect_offer: 'Чтобы утренний брифинг приходил и при выключенном компьютере, подключите Claude к MOOPI: откроется одно окно — нажмите «Add» и «Продолжить».',
+  connect_yes: 'Подключить', connect_failed: 'Не удалось открыть ссылку подключения: {e}',
 });
 Object.assign(T.uz, {
   as_ready: "Tayyorman. Gapiring yoki yozing.", as_listening: "Eshityapman… to‘xtatish uchun yana bosing", as_thinking: "O‘ylayapman…",
@@ -667,7 +677,8 @@ async function prepareWorkspace(context, api) {
     fs.mkdirSync(path.join(WORKSPACE_DIR, '.claude', 'commands'), { recursive: true });
     writeIfChanged(path.join(WORKSPACE_DIR, '.claude', 'commands', 'ertalabki-brifing.md'),
       bundled('ertalabki-brifing.md').replace(/\{time\}/g, time).replace(/\{timezone\}/g, tz).replace(/\{cron\}/g, memory.cronFor(time, tz)));
-    if (!fs.existsSync(path.join(WORKSPACE_DIR, '.mcp.json'))) fs.writeFileSync(path.join(WORKSPACE_DIR, '.mcp.json'), bundled('mcp.json'));
+    writeIfChanged(path.join(WORKSPACE_DIR, '.claude', 'commands', 'ertalabki-brifing-yoz.md'), bundled('ertalabki-brifing-yoz.md'));
+    writeMcpConfig(context);
     const settingsPath = path.join(WORKSPACE_DIR, '.claude', 'settings.json');
     let own = {}; try { own = JSON.parse(fs.readFileSync(settingsPath, 'utf8')); } catch (e) {}
     const wanted = JSON.parse(bundled('settings.json'));
@@ -682,21 +693,13 @@ async function prepareWorkspace(context, api) {
 }
 
 /** A person on a Claude subscription (own billing, no key in MOOPI): MOOPI's server neither learns from their
- *  conversations nor writes their briefing, so Claude is told it keeps the memory itself and — when no briefing
- *  came in the last two days — to offer the briefing routine (/ertalabki-brifing) once. */
-function onSubscription(me) { return !!me && me.billing === 'own' && !me.claude_key_end; }
+ *  conversations nor writes their briefing, so Claude is told it keeps the memory itself (morning.js sees to the
+ *  briefing). */
+const onSubscription = morning.onSubscription;
 async function subscriptionNote(api) {
   if (!onSubscription(api.me)) return '';
-  let recent = false;
-  try {
-    const b = (await api.get('/today') || {}).briefing;
-    const at = b && String(b.created_at || '');
-    recent = !!at && Date.now() - Date.parse(/(Z|[+-]\d\d:?\d\d)$/.test(at) ? at : at + 'Z') < 2 * 86400000;
-  } catch (e) {}
-  return "\nFoydalanuvchi Claude obunasi bilan ishlaydi: MOOPI serveri uning suhbatlaridan o'zi o'rganmaydi va brifing " +
-    "yozmaydi — xotirani faqat sen yuritasan, shuning uchun yozishni unutma." +
-    (recent ? '' : " Ertalabki brifing hali kelmayapti: suhbat mos kelganda bir marta taklif qil — «/ertalabki-brifing» buyrug'i " +
-      "uni Claude'ning rejali vazifasi qilib sozlaydi (har kuni ertalab, obuna ichida, kompyuter o'chiq bo'lsa ham).") + '\n';
+  return "\nFoydalanuvchi Claude obunasi bilan ishlaydi: MOOPI serveri uning suhbatlaridan o'zi o'rganmaydi — xotirani " +
+    "faqat sen yuritasan, shuning uchun yozishni unutma. Ertalabki brifingni MOOPI Desktop o'zi tashkil qiladi.\n";
 }
 
 /** Claude Code's settings for ~/MOOPI that only this computer has (.claude/settings.local.json): the memory
@@ -715,6 +718,18 @@ function writeLocalSettings(context) {
   const port = context.globalState.get('moopi.hookPort') || 47821;
   writeIfChanged(file, JSON.stringify(memory.localSettings(current, `http://127.0.0.1:${port}/stop`, hookToken(context)), null, 2) + '\n');
 }
+
+/** ~/MOOPI/.mcp.json: Claude Code's server "moopi" is the extension's bridge on 127.0.0.1 (bridge.js), so Claude
+ *  reaches MOOPI's tools with Desktop's own sign-in; the person's other servers there stay. */
+function writeMcpConfig(context) {
+  const file = path.join(WORKSPACE_DIR, '.mcp.json');
+  let raw = null; try { raw = fs.readFileSync(file, 'utf8'); } catch (e) {}
+  let current = {};
+  if (raw !== null && raw.trim()) { try { current = JSON.parse(raw); } catch (e) { noteError('.mcp.json', e); current = {}; } }
+  const port = context.globalState.get('moopi.hookPort') || 47821;
+  writeIfChanged(file, JSON.stringify(bridge.mcpConfig(current, `http://127.0.0.1:${port}/mcp`, hookToken(context)), null, 2) + '\n');
+}
+function connectorUrl() { return vscode.workspace.getConfiguration('moopi').get('connectorUrl', 'https://mcp.moopi.uz').replace(/\/$/, ''); }
 
 /** MOOPI's memory as Claude's own (memory.js): the xotira/ folder kept the same as MOOPI's memory — on a change
  *  in the folder, every minute, when the window comes to the front, after a sign-in — and the Stop hook that
@@ -739,14 +754,75 @@ async function startMemory(context, api) {
     api.onChange(() => { if (api.token) { setTimeout(run, 3000); prepareWorkspace(context, api).catch(() => {}); } }),
     vscode.window.onDidChangeWindowState((st) => { if (st.focused) soon(); }));
   setTimeout(run, 4000);
+  const tokens = new bridge.Tokens({ connectorUrl: connectorUrl(), appToken: () => api.token, userId: () => api.me && api.me.id,
+    store: { get: async () => { try { return JSON.parse((await context.secrets.get('moopi.mcpTokens')) || 'null'); } catch (e) { return null; } },
+             set: async (v) => { if (v) await context.secrets.store('moopi.mcpTokens', JSON.stringify(v)); else await context.secrets.delete('moopi.mcpTokens'); } } });
+  context.subscriptions.push(api.onChange(() => { if (!api.token) context.secrets.delete('moopi.mcpTokens').then(() => {}, () => {}); }));
   const started = await memory.startHookServer({ token: hookToken(context), memoryDir: root,
-    port: context.globalState.get('moopi.hookPort') || 47821, isOn: () => !!api.token, log: (where, e) => noteError(where, e) });
+    port: context.globalState.get('moopi.hookPort') || 47821, isOn: () => !!api.token, log: (where, e) => noteError(where, e),
+    mcp: (req, res) => bridge.forward(req, res, { mcpUrl: connectorUrl() + '/mcp', tokens, log: (where, e) => noteError(where, e) }) });
   if (!started) { noteError('memoryHook', new Error('no free port on 127.0.0.1')); return; }
   context.subscriptions.push({ dispose: () => started.server.close() });
   if (started.port !== context.globalState.get('moopi.hookPort')) {
     await context.globalState.update('moopi.hookPort', started.port);
     writeLocalSettings(context);
+    writeMcpConfig(context);
   }
+}
+
+/** The morning briefing inside the subscription (morning.js): every five minutes and when the window comes to the
+ *  front. What types into Claude's panel waits until MOOPI Desktop is in front and Claude is not answering. */
+function claudeBusy() {
+  const dir = transcriptDir(); if (!dir) return false;
+  try { return fs.readdirSync(dir).some((n) => n.endsWith('.jsonl') && Date.now() - fs.statSync(path.join(dir, n)).mtimeMs < 60000); } catch (e) { return false; }
+}
+async function connectClaudeAi(context, api) {
+  try {
+    const r = await fetch(connectorUrl() + '/connector/desktop-link', { method: 'POST', headers: { Authorization: 'Bearer ' + api.token } });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const { url } = await r.json();
+    await vscode.env.openExternal(vscode.Uri.parse(url));
+  } catch (e) {
+    reportError(context, api, 'connectClaudeAi', e);
+    vscode.window.showWarningMessage(t('connect_failed').replace('{e}', String(e.message || e)));
+  }
+}
+let morningBusy = false;
+async function morningCheck(context, api) {
+  if (morningBusy || !api.token) return;
+  morningBusy = true;
+  try {
+    const me = await api.get('/auth/me');
+    if (!me) return;
+    api.me = me;
+    if (!morning.onSubscription(me)) return;
+    const state = context.globalState.get('moopi.morning') || {};
+    const today = await api.get('/today').catch(() => null);
+    const action = morning.decide({ me, today, state });
+    if (!action) return;
+    if (action === 'offerConnect') {
+      await context.globalState.update('moopi.morning', { ...state, offeredAt: Date.now() });
+      const pick = await vscode.window.showInformationMessage(t('connect_offer'), t('connect_yes'), t('later'));
+      if (pick === t('connect_yes')) await connectClaudeAi(context, api);
+      return;
+    }
+    if (!vscode.window.state.focused || !claudeIsReady() || claudeBusy()) return;
+    const command = action === 'setupRoutine' ? '/ertalabki-brifing' : '/ertalabki-brifing-yoz';
+    // in a conversation of its own, so nothing the person had open (or a draft there) is mixed in
+    try { await openClaude(); await vscode.commands.executeCommand('claude-vscode.newConversation'); } catch (e) {}
+    await new Promise((r) => setTimeout(r, 1200));
+    const typed = await assistant.typeToPanel(assistantContext(context, api), command);
+    if (!typed) return;
+    const done = action === 'setupRoutine' ? { routineSetupFor: me.id } : { wroteOn: morning.localNow(me.timezone || 'Asia/Tashkent').date };
+    await context.globalState.update('moopi.morning', { ...state, ...done });
+  } catch (e) { noteError('morning', e); } finally { morningBusy = false; }
+}
+function startMorning(context, api) {
+  const every = setInterval(() => morningCheck(context, api), 5 * 60000);
+  context.subscriptions.push({ dispose: () => clearInterval(every) },
+    vscode.window.onDidChangeWindowState((st) => { if (st.focused) setTimeout(() => morningCheck(context, api), 3000); }),
+    vscode.commands.registerCommand('moopi.connectClaudeAi', () => connectClaudeAi(context, api)));
+  setTimeout(() => morningCheck(context, api), 90000);
 }
 
 /** What the app's Desktop section shows, sent after every change. */
@@ -1192,6 +1268,7 @@ function activate(context) {
     await applyLayout(context);
     if (!(await prepareWorkspace(context, api))) return; // the window reloads with ~/MOOPI open
     startMemory(context, api).catch((e) => noteError('memory', e));
+    startMorning(context, api);
     try { await vscode.commands.executeCommand('workbench.action.closeSidebar'); } catch (e) {}
     openApp(context, api);
     try { await vscode.commands.executeCommand('workbench.action.joinAllGroups'); } catch (e) {} // an empty group left by an older version

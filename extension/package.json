@@ -130,6 +130,10 @@
       {
         "command": "moopi.usage",
         "title": "MOOPI: Claude limiti (/usage)"
+      },
+      {
+        "command": "moopi.connectClaudeAi",
+        "title": "MOOPI: Claude'ni MOOPI'ga ulash (claude.ai)"
       }
     ],
     "menus": {

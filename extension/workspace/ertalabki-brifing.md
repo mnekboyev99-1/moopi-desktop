@@ -8,10 +8,9 @@ Foydalanuvchi bilan uning tilida, sodda gaplash; texnik so'zlarni ishlatma.
 1. `schedule` ko'nikmasini yukla (Skill vositasi): undagi muhitlar (environment) va claude.ai'da ulangan
    konnektorlar ro'yxati kerak. Foydalanuvchi "yaratish"ni allaqachon tanlagan — amal turini so'rama.
 2. Ulangan konnektorlar orasida MOOPI (URL `https://mcp.moopi.uz/mcp`) bormi, qara. Yo'q bo'lsa,
-   foydalanuvchiga shuni ayt va shu yerda to'xta:
-   claude.ai → Sozlamalar (Settings) → Connectors → «Add custom connector» → nomi: MOOPI, URL:
-   https://mcp.moopi.uz/mcp → «Connect» → MOOPI email va paroli bilan kiring (paroli yo'q bo'lsa, MOOPI
-   ilovasida Sozlamalar → Hisob → parol o'rnating). Keyin shu yerga /ertalabki-brifing deb yozing.
+   foydalanuvchiga shuni ayt va shu yerda to'xta: MOOPI Desktop'da buyruqlar oynasini oching (Ctrl+Shift+P
+   yoki Cmd+Shift+P) va «MOOPI: Claude'ni MOOPI'ga ulash» ni tanlang — claude.ai'da tayyor oyna ochiladi,
+   «Add», keyin «Davom etish» ni bosasiz. Keyin shu yerga /ertalabki-brifing deb yozing.
 3. RemoteTrigger `list` bilan «MOOPI ertalabki brifing» nomli vazifa bormi, tekshir. Bo'lsa, yangisini
    yaratma: vaqti `{cron}` bo'lmasa, `update` bilan to'g'rila va shuni ayt.
 4. Yo'q bo'lsa, foydalanuvchiga bir gapda ayt — har kuni {time} da ({timezone}), uning Claude obunasi

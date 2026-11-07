@@ -272,15 +272,17 @@ class MemorySync {
   }
 }
 
-/** The Stop hook's server on 127.0.0.1: Claude Code posts the hook's input (the session's transcript path)
- *  and gets back, at most once per few messages, a request to save what matters. A post without the token
- *  is refused; the transcript is read only from Claude Code's own folder. */
-function startHookServer({ token, memoryDir, port, isOn, log }) {
+/** The extension's server on 127.0.0.1, for Claude Code only (this installation's token in every request):
+ *  /stop — the Stop hook: Claude Code posts the hook's input (the session's transcript path) and gets back, at
+ *  most once per few messages, a request to save what matters; the transcript is read only from Claude Code's
+ *  own folder. /mcp — MOOPI's tools (bridge.js). */
+function startHookServer({ token, memoryDir, port, isOn, log, mcp }) {
   const projects = path.join(os.homedir(), '.claude', 'projects');
   const handle = (req, res) => {
     const send = (code, obj) => { const b = JSON.stringify(obj); res.writeHead(code, { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b) }); res.end(b); };
-    if (req.method !== 'POST' || req.url !== '/stop') return send(404, {});
     if (req.headers['x-moopi-hook'] !== token) return send(403, {});
+    if (mcp && req.url.split('?')[0] === '/mcp') return mcp(req, res); // bridge.js: MOOPI's tools for Claude
+    if (req.method !== 'POST' || req.url !== '/stop') return send(404, {});
     let body = '';
     req.on('data', (c) => { body += c; if (body.length > 1e6) req.destroy(); });
     req.on('end', () => {
