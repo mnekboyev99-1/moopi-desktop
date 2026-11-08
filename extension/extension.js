@@ -9,6 +9,7 @@ const quick = require('./quick');
 const memory = require('./memory');
 const bridge = require('./bridge');
 const morning = require('./morning');
+const update = require('./update');
 const fs = require('fs');
 const path = require('path');
 
@@ -1023,17 +1024,11 @@ async function checkUpdate(context, api, manual, atStart) {
   const current = context.extension.packageJSON.version;
   const repo = conf.get('updateRepo', 'mnekboyev99-1/moopi-desktop');
   try {
-    const r = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, { headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'moopi-desktop' } });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const rel = await r.json();
-    const tag = String(rel.tag_name || '').replace(/^v/, '');
-    if (!/^\d+\.\d+\.\d+$/.test(tag)) throw new Error('tag ' + rel.tag_name);
+    const { tag, url } = await update.latestRelease(repo);
     if (compareVersions(tag, current) <= 0) { if (manual) vscode.window.showInformationMessage(t('up_to_date').replace('{v}', current)); return; }
-    const asset = (rel.assets || []).find((a) => a.name === `moopi.moopi-desktop-${tag}.vsix`);
-    if (!asset) throw new Error('no vsix for ' + tag);
     updating = t('updating').replace('{v}', tag); sendState(context, api);
     const file = path.join(require('os').tmpdir(), `moopi.moopi-desktop-${tag}.vsix`);
-    const dl = await fetch(asset.browser_download_url, { headers: { 'User-Agent': 'moopi-desktop' } });
+    const dl = await fetch(url, { headers: { 'User-Agent': 'moopi-desktop' } });
     if (!dl.ok) throw new Error('HTTP ' + dl.status);
     fs.writeFileSync(file, Buffer.from(await dl.arrayBuffer()));
     await vscode.commands.executeCommand('workbench.extensions.installExtension', vscode.Uri.file(file));
