@@ -10,6 +10,7 @@ const memory = require('./memory');
 const bridge = require('./bridge');
 const morning = require('./morning');
 const update = require('./update');
+const install = require('./install');
 const fs = require('fs');
 const path = require('path');
 
@@ -42,6 +43,7 @@ Object.assign(T.uz, {
   dictate_unsupported: 'Gapirib yozish bu tizimda hozircha yo\u2018q', dictate_recording: 'Yozilmoqda\u2026 to\u2018xtatish uchun yana bosing',
   update_ready: 'MOOPI yangilandi ({v}). Qayta yuklash?', updating: 'Yangilanmoqda: {v}\u2026', updated: 'Yangilandi: {v} \u2014 qayta yuklang',
   update_available: 'MOOPI\u2019ning yangi versiyasi bor: {v}.', update_now: 'Yangilash',
+  dup_site: 'Kompyuterda MOOPI\u2019ning saytdan o\u2018rnatilgan eski nusxasi ham bor. Ikkita dastur kerak emas \u2014 eski nusxani o\u2018chiraymi?', dup_remove: 'O\u2018chirish',
   reload: 'Qayta yuklash', later: 'Keyinroq', up_to_date: 'MOOPI yangi ({v}).', update_failed: 'Yangilab bo\u2018lmadi', update_reloading: 'MOOPI {v} ga yangilandi \u2014 qayta yuklanmoqda\u2026',
   signed_in_google: 'Kirdingiz.', signin_failed: 'Kirib bo\u2018lmadi: {e}', launch_on: 'Kompyuter bilan ochilish yoqildi',
   launch_off: 'Kompyuter bilan ochilish o\u2018chirildi', hotkey_set: 'Tezkor tugma: {k}', hotkey_cleared: 'Tezkor tugma olib tashlandi',
@@ -52,6 +54,7 @@ Object.assign(T.ru, {
   dictate_unsupported: '\u041d\u0430\u0434\u0438\u043a\u0442\u043e\u0432\u043a\u0430 \u0432 \u044d\u0442\u043e\u0439 \u0441\u0438\u0441\u0442\u0435\u043c\u0435 \u043f\u043e\u043a\u0430 \u043d\u0435\u0434\u043e\u0441\u0442\u0443\u043f\u043d\u0430', dictate_recording: '\u0417\u0430\u043f\u0438\u0441\u044c\u2026 \u043d\u0430\u0436\u043c\u0438\u0442\u0435 \u0435\u0449\u0451 \u0440\u0430\u0437, \u0447\u0442\u043e\u0431\u044b \u043e\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u044c',
   update_ready: 'MOOPI \u043e\u0431\u043d\u043e\u0432\u043b\u0451\u043d ({v}). \u041f\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c?', updating: '\u041e\u0431\u043d\u043e\u0432\u043b\u0435\u043d\u0438\u0435: {v}\u2026', updated: '\u041e\u0431\u043d\u043e\u0432\u043b\u0435\u043d\u043e: {v} \u2014 \u043f\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u0435',
   update_available: '\u0414\u043e\u0441\u0442\u0443\u043f\u043d\u0430 \u043d\u043e\u0432\u0430\u044f \u0432\u0435\u0440\u0441\u0438\u044f MOOPI: {v}.', update_now: '\u041e\u0431\u043d\u043e\u0432\u0438\u0442\u044c',
+  dup_site: '\u041d\u0430 \u043a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440\u0435 \u0435\u0441\u0442\u044c \u0438 \u0441\u0442\u0430\u0440\u0430\u044f \u043a\u043e\u043f\u0438\u044f MOOPI, \u0443\u0441\u0442\u0430\u043d\u043e\u0432\u043b\u0435\u043d\u043d\u0430\u044f \u0441 \u0441\u0430\u0439\u0442\u0430. \u0414\u0432\u0435 \u043f\u0440\u043e\u0433\u0440\u0430\u043c\u043c\u044b \u043d\u0435 \u043d\u0443\u0436\u043d\u044b \u2014 \u0443\u0434\u0430\u043b\u0438\u0442\u044c \u0441\u0442\u0430\u0440\u0443\u044e \u043a\u043e\u043f\u0438\u044e?', dup_remove: '\u0423\u0434\u0430\u043b\u0438\u0442\u044c',
   reload: '\u041f\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c', later: '\u041f\u043e\u0437\u0436\u0435', update_reloading: 'MOOPI обновлён до {v} \u2014 перезагрузка\u2026', up_to_date: 'MOOPI \u0430\u043a\u0442\u0443\u0430\u043b\u0435\u043d ({v}).', update_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0431\u043d\u043e\u0432\u0438\u0442\u044c',
   signed_in_google: '\u0412\u044b \u0432\u043e\u0448\u043b\u0438.', signin_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0432\u043e\u0439\u0442\u0438: {e}', launch_on: '\u0417\u0430\u043f\u0443\u0441\u043a \u0441 \u043a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440\u043e\u043c \u0432\u043a\u043b\u044e\u0447\u0451\u043d',
   launch_off: '\u0417\u0430\u043f\u0443\u0441\u043a \u0441 \u043a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440\u043e\u043c \u0432\u044b\u043a\u043b\u044e\u0447\u0435\u043d', hotkey_set: '\u0413\u043e\u0440\u044f\u0447\u0430\u044f \u043a\u043b\u0430\u0432\u0438\u0448\u0430: {k}', hotkey_cleared: '\u0413\u043e\u0440\u044f\u0447\u0430\u044f \u043a\u043b\u0430\u0432\u0438\u0448\u0430 \u0443\u0431\u0440\u0430\u043d\u0430',
@@ -1304,6 +1307,20 @@ async function speakBriefing(context, api) {
   } catch (e) { noteError('briefing', e); }
 }
 
+/** One MOOPI on a computer (owner, 08.11.2026): the Store's copy finds a copy installed earlier from the site and
+ *  offers to remove it, once a day at most; the site copy's own uninstaller runs, so the person confirms it there. */
+async function offerToRemoveSiteCopy(context) {
+  if (process.platform !== 'win32' || !install.fromStore()) return;
+  const copies = install.siteCopies();
+  if (!copies.length) return;
+  const asked = context.globalState.get('moopi.siteCopyAsked') || 0;
+  if (Date.now() - asked < 24 * 3600 * 1000) return;
+  await context.globalState.update('moopi.siteCopyAsked', Date.now());
+  const pick = await vscode.window.showInformationMessage(t('dup_site'), t('dup_remove'), t('later'));
+  if (pick !== t('dup_remove')) return;
+  for (const u of copies) require('child_process').spawn(u, [], { detached: true, stdio: 'ignore' }).unref();
+}
+
 let claudeOpened = false;
 function activate(context) {
   const api = new Api(context);
@@ -1368,6 +1385,7 @@ function activate(context) {
     setTimeout(() => speakBriefing(context, api), 12000);
     context.subscriptions.push(api.onChange(() => { if (api.token) setTimeout(() => speakBriefing(context, api), 5000); }));
     const updates = setInterval(() => checkUpdate(context, api, false), 6 * 3600 * 1000);
+    setTimeout(() => offerToRemoveSiteCopy(context).catch((e) => noteError('siteCopy', e)), 30000);
     context.subscriptions.push({ dispose: () => clearInterval(updates) });
     try { await vscode.commands.executeCommand('workbench.action.lockEditorGroup'); } catch (e) {}
     // One program on a computer for everyone (owner, 08.11.2026): Claude comes into the window only for a person on a
