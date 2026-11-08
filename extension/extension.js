@@ -41,6 +41,7 @@ Object.assign(T.uz, {
   dictate_copied: "Matn nusxalandi \u2014 Claude maydoniga Ctrl+V bilan qo\u2018ying.", dictate_failed: 'Ovozni matnga aylantirib bo\u2018lmadi',
   dictate_unsupported: 'Gapirib yozish bu tizimda hozircha yo\u2018q', dictate_recording: 'Yozilmoqda\u2026 to\u2018xtatish uchun yana bosing',
   update_ready: 'MOOPI yangilandi ({v}). Qayta yuklash?', updating: 'Yangilanmoqda: {v}\u2026', updated: 'Yangilandi: {v} \u2014 qayta yuklang',
+  update_available: 'MOOPI\u2019ning yangi versiyasi bor: {v}.', update_now: 'Yangilash',
   reload: 'Qayta yuklash', later: 'Keyinroq', up_to_date: 'MOOPI yangi ({v}).', update_failed: 'Yangilab bo\u2018lmadi', update_reloading: 'MOOPI {v} ga yangilandi \u2014 qayta yuklanmoqda\u2026',
   signed_in_google: 'Kirdingiz.', signin_failed: 'Kirib bo\u2018lmadi: {e}', launch_on: 'Kompyuter bilan ochilish yoqildi',
   launch_off: 'Kompyuter bilan ochilish o\u2018chirildi', hotkey_set: 'Tezkor tugma: {k}', hotkey_cleared: 'Tezkor tugma olib tashlandi',
@@ -50,6 +51,7 @@ Object.assign(T.ru, {
   dictate_copied: '\u0422\u0435\u043a\u0441\u0442 \u0441\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u043d \u2014 \u0432\u0441\u0442\u0430\u0432\u044c\u0442\u0435 \u0432 \u043f\u043e\u043b\u0435 Claude (Ctrl+V).', dictate_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043f\u0440\u0435\u0432\u0440\u0430\u0442\u0438\u0442\u044c \u0440\u0435\u0447\u044c \u0432 \u0442\u0435\u043a\u0441\u0442',
   dictate_unsupported: '\u041d\u0430\u0434\u0438\u043a\u0442\u043e\u0432\u043a\u0430 \u0432 \u044d\u0442\u043e\u0439 \u0441\u0438\u0441\u0442\u0435\u043c\u0435 \u043f\u043e\u043a\u0430 \u043d\u0435\u0434\u043e\u0441\u0442\u0443\u043f\u043d\u0430', dictate_recording: '\u0417\u0430\u043f\u0438\u0441\u044c\u2026 \u043d\u0430\u0436\u043c\u0438\u0442\u0435 \u0435\u0449\u0451 \u0440\u0430\u0437, \u0447\u0442\u043e\u0431\u044b \u043e\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u044c',
   update_ready: 'MOOPI \u043e\u0431\u043d\u043e\u0432\u043b\u0451\u043d ({v}). \u041f\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c?', updating: '\u041e\u0431\u043d\u043e\u0432\u043b\u0435\u043d\u0438\u0435: {v}\u2026', updated: '\u041e\u0431\u043d\u043e\u0432\u043b\u0435\u043d\u043e: {v} \u2014 \u043f\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u0435',
+  update_available: '\u0414\u043e\u0441\u0442\u0443\u043f\u043d\u0430 \u043d\u043e\u0432\u0430\u044f \u0432\u0435\u0440\u0441\u0438\u044f MOOPI: {v}.', update_now: '\u041e\u0431\u043d\u043e\u0432\u0438\u0442\u044c',
   reload: '\u041f\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c', later: '\u041f\u043e\u0437\u0436\u0435', update_reloading: 'MOOPI обновлён до {v} \u2014 перезагрузка\u2026', up_to_date: 'MOOPI \u0430\u043a\u0442\u0443\u0430\u043b\u0435\u043d ({v}).', update_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0431\u043d\u043e\u0432\u0438\u0442\u044c',
   signed_in_google: '\u0412\u044b \u0432\u043e\u0448\u043b\u0438.', signin_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0432\u043e\u0439\u0442\u0438: {e}', launch_on: '\u0417\u0430\u043f\u0443\u0441\u043a \u0441 \u043a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440\u043e\u043c \u0432\u043a\u043b\u044e\u0447\u0451\u043d',
   launch_off: '\u0417\u0430\u043f\u0443\u0441\u043a \u0441 \u043a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440\u043e\u043c \u0432\u044b\u043a\u043b\u044e\u0447\u0435\u043d', hotkey_set: '\u0413\u043e\u0440\u044f\u0447\u0430\u044f \u043a\u043b\u0430\u0432\u0438\u0448\u0430: {k}', hotkey_cleared: '\u0413\u043e\u0440\u044f\u0447\u0430\u044f \u043a\u043b\u0430\u0432\u0438\u0448\u0430 \u0443\u0431\u0440\u0430\u043d\u0430',
@@ -1026,6 +1028,16 @@ async function checkUpdate(context, api, manual, atStart) {
   try {
     const { tag, url } = await update.latestRelease(repo);
     if (compareVersions(tag, current) <= 0) { if (manual) vscode.window.showInformationMessage(t('up_to_date').replace('{v}', current)); return; }
+    // Never on its own (owner, 08.11.2026: "avtomatik emas — yangilash bildirishnomasi chiqadi, user bosadi
+    // yangilaydi"): a notice with "Yangilash", once a day at most for the same version; the update menu item
+    // (manual) installs at once, since the person asked for it.
+    if (!manual) {
+      const asked = context.globalState.get('moopi.updateAsked') || {};
+      if (asked.v === tag && Date.now() - (asked.at || 0) < 24 * 3600 * 1000) return;
+      await context.globalState.update('moopi.updateAsked', { v: tag, at: Date.now() });
+      const pick = await vscode.window.showInformationMessage(t('update_available').replace('{v}', tag), t('update_now'), t('later'));
+      if (pick !== t('update_now')) return;
+    }
     updating = t('updating').replace('{v}', tag); sendState(context, api);
     const file = path.join(require('os').tmpdir(), `moopi.moopi-desktop-${tag}.vsix`);
     const dl = await fetch(url, { headers: { 'User-Agent': 'moopi-desktop' } });
@@ -1034,13 +1046,9 @@ async function checkUpdate(context, api, manual, atStart) {
     await vscode.commands.executeCommand('workbench.extensions.installExtension', vscode.Uri.file(file));
     try { fs.unlinkSync(file); } catch (e) {}
     updating = t('updated').replace('{v}', tag); sendState(context, api);
-    if (atStart) { // nobody is in the middle of anything yet: the new version comes up by itself
-      vscode.window.showInformationMessage(t('update_reloading').replace('{v}', tag));
-      setTimeout(() => vscode.commands.executeCommand('workbench.action.reloadWindow'), 2500);
-      return;
-    }
-    const pick = await vscode.window.showInformationMessage(t('update_ready').replace('{v}', tag), t('reload'), t('later'));
-    if (pick === t('reload')) await vscode.commands.executeCommand('workbench.action.reloadWindow');
+    // The person pressed "Yangilash" (or asked from the menu): the new version comes up right away.
+    vscode.window.showInformationMessage(t('update_reloading').replace('{v}', tag));
+    setTimeout(() => vscode.commands.executeCommand('workbench.action.reloadWindow'), 2000);
   } catch (e) {
     updating = ''; sendState(context, api); noteError('checkUpdate', e);
     if (manual) vscode.window.showWarningMessage(t('update_failed') + ': ' + ((e && e.message) || e));
@@ -1296,6 +1304,7 @@ async function speakBriefing(context, api) {
   } catch (e) { noteError('briefing', e); }
 }
 
+let claudeOpened = false;
 function activate(context) {
   const api = new Api(context);
   errorApi = api; errorExt = String(context.extension.packageJSON.version || '');
@@ -1361,7 +1370,16 @@ function activate(context) {
     const updates = setInterval(() => checkUpdate(context, api, false), 6 * 3600 * 1000);
     context.subscriptions.push({ dispose: () => clearInterval(updates) });
     try { await vscode.commands.executeCommand('workbench.action.lockEditorGroup'); } catch (e) {}
-    setTimeout(async () => { if (await ensureClaude(context, api)) { await openClaude(); appPanel && appPanel.reveal(vscode.ViewColumn.One, true); } }, 2500);
+    // One program on a computer for everyone (owner, 08.11.2026): Claude comes into the window only for a person on a
+    // Claude subscription (own billing, no API key); anyone else has MOOPI's app over the whole window, with its own
+    // chat on MOOPI's server. Checked again whenever the account changes (signing in, the subscription switched on).
+    const claudeIfSubscribed = async () => {
+      if (claudeOpened || !morning.onSubscription(api.me)) return;
+      claudeOpened = true;
+      if (await ensureClaude(context, api)) { await openClaude(); appPanel && appPanel.reveal(vscode.ViewColumn.One, true); }
+    };
+    setTimeout(claudeIfSubscribed, 2500);
+    context.subscriptions.push(api.onChange(() => setTimeout(claudeIfSubscribed, 2500)));
   })();
   // Refresh the panels now and then while the window is open; watch MOOPI for new approvals and notes.
   const timer = setInterval(() => { if (api.token) refreshAll(); }, 120000);
