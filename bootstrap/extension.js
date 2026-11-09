@@ -24,9 +24,22 @@ function presets(context) {
   } catch (e) {}
 }
 
+/** The version of the MOOPI extension packaged with this build ('' when unknown). */
+function bundledVersion(context) {
+  try { return fs.readFileSync(path.join(context.extensionPath, 'bundled-version.txt'), 'utf8').trim(); } catch (e) { return ''; }
+}
+function isNewer(a, b) {
+  const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number);
+  for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); }
+  return false;
+}
+
 async function activate(context) {
-  if (vscode.extensions.getExtension(MAIN)) return; // installed already: the main extension takes it from here
-  if (context.globalState.get('moopi.bootstrapped') === context.extension.packageJSON.version && !context.globalState.get('moopi.bootstrapRetry')) {
+  // An older MOOPI extension is replaced by the packaged one: a Desktop that could not update itself gets well this way.
+  const want = bundledVersion(context), have = vscode.extensions.getExtension(MAIN);
+  if (have && !(want && isNewer(want, have.packageJSON.version))) return; // the main extension takes it from here
+  const mark = want || context.extension.packageJSON.version;
+  if (context.globalState.get('moopi.bootstrapped') === mark && !context.globalState.get('moopi.bootstrapRetry')) {
     // Installed earlier but not loaded yet (the reload after the install did not happen): one more reload.
     await context.globalState.update('moopi.bootstrapRetry', true);
     await vscode.commands.executeCommand('workbench.action.reloadWindow');
@@ -39,7 +52,7 @@ async function activate(context) {
     if (fs.existsSync(bundled)) { file = path.join(os.tmpdir(), 'moopi.moopi-desktop-bundled.vsix'); fs.copyFileSync(bundled, file); }
     else file = await download();
     await vscode.commands.executeCommand('workbench.extensions.installExtension', vscode.Uri.file(file));
-    await context.globalState.update('moopi.bootstrapped', context.extension.packageJSON.version);
+    await context.globalState.update('moopi.bootstrapped', mark);
     await context.globalState.update('moopi.bootstrapRetry', false);
     presets(context);
     await vscode.commands.executeCommand('workbench.action.reloadWindow');
