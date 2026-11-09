@@ -87,7 +87,7 @@ Object.assign(T.uz, {
   as_need_mic: "Mac mikrofonga ruxsat bermagan. Ochilgan oynada MOOPI Desktop (yoki VSCodium) ni yoqing va dasturni qayta oching.",
   as_need_screen: "Mac ekranni olishga ruxsat bermagan. Ochilgan oynada «Ekranni yozib olish» ro'yxatida MOOPI Desktop (yoki VSCodium) ni yoqing va dasturni qayta oching.",
   as_too_short: "Juda qisqa — tugmani bosib, gapirib bo'lgach yana bosing.",
-  as_not_taken: "Matn Claude’ga yetib bormadi. U nusxalangan: panelga bosib, Ctrl+V qiling.", intro_prompt: "Salom! Keling, tanishaylik: biznesim haqida savollar bering, javoblarimni xotiraga yozing.", as_claude_thinking: "Claude o‘ylayapti…", as_reading: "O‘qiyapman…", as_listening_short: "Eshityapman…", as_answered: "Javob Claude panelida",
+  as_not_taken: "Matn Claude’ga yetib bormadi. U nusxalangan: panelga bosib, Ctrl+V qiling.", as_claude_thinking: "Claude o‘ylayapti…", as_reading: "O‘qiyapman…", as_listening_short: "Eshityapman…", as_answered: "Javob Claude panelida",
   as_remove: "Olib tashlash", as_clip_empty: "Buferda hech narsa yo‘q — avval nusxalang", as_open_window: "Yordamchini ochish",
   as_usage: "Limit", as_usage_sent: "Claude limiti Claude panelida ochildi (5 soatlik va haftalik).", watch_pick: "Kuzatish", watch_reading: "MOOPI o'qiyapti: {f}", watch_failed: "O'qib bo'lmadi: {f}",
   quick_busy: "MOOPI hozir band — biroz kuting.", quick_done: "Tayyor: {f} — ochildi, tayyor/ papkasida.", quick_nothing: "Bajarildi.",
@@ -110,7 +110,7 @@ Object.assign(T.ru, {
   as_need_mic: "Mac не дал доступ к микрофону. В открывшемся окне включите MOOPI Desktop (или VSCodium) и перезапустите программу.",
   as_need_screen: "Mac не дал доступ к записи экрана. В открывшемся окне в списке «Запись экрана» включите MOOPI Desktop (или VSCodium) и перезапустите программу.",
   as_too_short: "Слишком коротко — нажмите, скажите и нажмите ещё раз.",
-  as_not_taken: "Текст не дошёл до Claude. Он скопирован: нажмите на панель и вставьте Ctrl+V.", intro_prompt: "Здравствуйте! Давайте познакомимся: задайте вопросы о моём бизнесе и запишите ответы в память.", as_claude_thinking: "Claude думает…", as_reading: "Читаю…", as_listening_short: "Слушаю…", as_answered: "Ответ в панели Claude",
+  as_not_taken: "Текст не дошёл до Claude. Он скопирован: нажмите на панель и вставьте Ctrl+V.", as_claude_thinking: "Claude думает…", as_reading: "Читаю…", as_listening_short: "Слушаю…", as_answered: "Ответ в панели Claude",
   as_remove: "Убрать", as_clip_empty: "В буфере пусто — сначала скопируйте", as_open_window: "Открыть помощника",
   as_usage: "Лимит", as_usage_sent: "Лимит Claude открыт в панели Claude (5-часовой и недельный).", watch_pick: "Отслеживать", watch_reading: "MOOPI читает: {f}", watch_failed: "Не удалось прочитать: {f}",
   quick_busy: "MOOPI сейчас занят — подождите.", quick_done: "Готово: {f} — открыто, лежит в tayyor/.", quick_nothing: "Выполнено.",
@@ -695,6 +695,7 @@ async function prepareWorkspace(context, api) {
         bundled('ertalabki-brifing.md').replace(/\{time\}/g, time).replace(/\{timezone\}/g, tz).replace(/\{cron\}/g, memory.cronFor(time, tz)));
     }
     writeIfChanged(path.join(WORKSPACE_DIR, '.claude', 'commands', 'ertalabki-brifing-yoz.md'), bundled('ertalabki-brifing-yoz.md'));
+    writeIfChanged(path.join(WORKSPACE_DIR, '.claude', 'commands', 'tanishuv.md'), bundled('tanishuv.md'));
     writeMcpConfig(context);
     const settingsPath = path.join(WORKSPACE_DIR, '.claude', 'settings.json');
     let own = {}; try { own = JSON.parse(fs.readFileSync(settingsPath, 'utf8')); } catch (e) {}
@@ -716,10 +717,7 @@ const onSubscription = morning.onSubscription;
 async function subscriptionNote(api) {
   if (!onSubscription(api.me)) return '';
   return "\nFoydalanuvchi Claude obunasi bilan ishlaydi: MOOPI serveri uning suhbatlaridan o'zi o'rganmaydi — xotirani " +
-    "faqat sen yuritasan, shuning uchun yozishni unutma. Ertalabki brifingni MOOPI Desktop o'zi tashkil qiladi.\n" +
-    "\nTanishuv: `xotira/biznes-pasporti.md` hali bo'sh andoza bo'lsa va foydalanuvchi tanishuvni so'rasa, biznesi haqida bir xabarda bitta savol ber: " +
-    "nima bilan shug'ullanadi, mahsulot va narxlar, mijozlar, sotuv kanallari, jamoa, asosiy muammo va maqsad. Javoblarni shu zahoti " +
-    "`biznes-pasporti.md`, `men-haqimda.md` va `odamlar.md` ga yoz. Tugagach `complete_onboarding` vositasini chaqir.\n";
+    "faqat sen yuritasan, shuning uchun yozishni unutma. Ertalabki brifingni MOOPI Desktop o'zi tashkil qiladi.\n";
 }
 
 /** Claude Code's settings for ~/MOOPI that only this computer has (.claude/settings.local.json): the memory
@@ -973,7 +971,7 @@ async function desktopAction(context, api, action, value) {
   else if (action === 'askScreen') await assistant.askScreen(ctx);
   else if (action === 'askClipboard') await assistant.askClipboard(ctx);
   else if (action === 'usage') await assistant.usage(ctx);
-  else if (action === 'startIntro') await assistant.typeToPanel(ctx, t('intro_prompt'));
+  else if (action === 'startIntro') await assistant.typeToPanel(ctx, '/tanishuv');
   else if (action === 'installClaude') { if (await ensureClaude(context, api)) await openClaude(); }
   else if (action === 'launchAtLogin') {
     await context.globalState.update('moopi.launchAtLogin', !!value);

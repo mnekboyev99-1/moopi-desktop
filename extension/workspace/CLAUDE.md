@@ -11,7 +11,7 @@ xotirasining o'zi: telefondagi «Xotira» bilan bir xil, bir necha soniyada sinx
 boshqa joylari (ilova, Telegram, ertalabki brifing) shu fayllardan biladi.
 
 Har sessiya boshida, javob berishdan oldin `xotira/` dan o'qi: `saboqlar.md` (foydalanuvchining doimiy
-qoidalari — ularga amal qil), `biznes-pasporti.md`, `men-haqimda.md` va `kundalik.md` ning birinchi
+qoidalari — ularga amal qil), `biznes-pasporti.md`, `men-haqimda.md` va `kundalik.md` (bor bo'lsa) ning birinchi
 10–15 qatori. Biznes haqida savolga mavzu faylini ochib javob ber (ro'yxati `MEMORY.md` da).
 
 Foydalanuvchi haqida yangi narsa bilsang (fakt, qaror, narx, odam, afzallik, tuzatish), darhol
