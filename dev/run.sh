@@ -9,7 +9,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 APP="$ROOT/vendor/MOOPI Desktop.app"; [ -d "$APP" ] || APP="$ROOT/vendor/VSCodium.app"
 CODIUM="${CODIUM:-$APP/Contents/Resources/app/bin/codium}"
 [ -x "$CODIUM" ] || { echo "VSCodium not found at $CODIUM (unzip the darwin-arm64 build into vendor/)"; exit 1; }
-RUN="$ROOT/.run"
+RUN="${MOOPI_RUN:-$ROOT/.run}"  # dev/test-account.sh keeps its own
 if [ "${1:-}" = "--reset" ]; then rm -rf "$RUN/user-data"; fi
 mkdir -p "$RUN/user-data/User" "$RUN/extensions" "$HOME/MOOPI/.claude"
 # The workspace: MOOPI's persona for Claude Code and the MOOPI MCP server (the connector; sign-in by OAuth
