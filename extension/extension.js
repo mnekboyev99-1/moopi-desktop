@@ -1324,7 +1324,8 @@ async function offerToRemoveSiteCopy(context) {
   diag({ step: 'shown', copies });
   const pick = await vscode.window.showInformationMessage(t('dup_site'), t('dup_remove'), t('later'));
   if (pick !== t('dup_remove')) return;
-  for (const u of copies) require('child_process').spawn(u, [], { detached: true, stdio: 'ignore' }).unref();
+  // The person has just answered; the uninstaller's own English "are you sure?" (with No preselected) is not asked again.
+  for (const u of copies) require('child_process').spawn(u, ['/VERYSILENT', '/NORESTART'], { detached: true, stdio: 'ignore' }).unref();
 }
 
 /** Claude's panel, wherever Claude Code has put it: the side bar on the right, or a tab beside MOOPI. */
