@@ -1323,7 +1323,21 @@ async function offerToRemoveSiteCopy(context) {
   for (const u of copies) require('child_process').spawn(u, [], { detached: true, stdio: 'ignore' }).unref();
 }
 
-let appCtx = null, claudeShownOnce = false;
+/** Claude's panel, wherever Claude Code has put it: the side bar on the right, or a tab beside MOOPI. */
+async function closeClaudePanel() {
+  await vscode.commands.executeCommand('workbench.action.closeAuxiliaryBar').then(undefined, () => {});
+  for (const g of vscode.window.tabGroups.all) for (const tab of g.tabs) {
+    const type = tab.input && tab.input.viewType;
+    if (type && /claude/i.test(String(type))) await vscode.window.tabGroups.close(tab).then(undefined, () => {});
+  }
+}
+async function setClaudePanel(context, api, open) {
+  await context.globalState.update('moopi.claudePanel', !!open);
+  if (!open) return closeClaudePanel();
+  if (await ensureClaude(context, api)) { await openClaude(); if (appPanel) appPanel.reveal(vscode.ViewColumn.One, true); }
+}
+
+let appCtx = null;
 function activate(context) {
   const api = new Api(context);
   errorApi = api; errorExt = String(context.extension.packageJSON.version || '');
@@ -1344,10 +1358,7 @@ function activate(context) {
     vscode.commands.registerCommand('moopi.signOut', async () => { await api.signOut(); vscode.window.showInformationMessage(t('signed_out')); }),
     vscode.commands.registerCommand('moopi.refresh', () => refreshAll()),
     vscode.commands.registerCommand('moopi.openClaude', () => openClaude()),
-    vscode.commands.registerCommand('moopi.toggleClaude', async () => {
-      if (!claudeShownOnce) { claudeShownOnce = true; await openClaude(); return; } // this start's first press: it shows
-      await vscode.commands.executeCommand('workbench.action.toggleAuxiliaryBar');
-    }),
+    vscode.commands.registerCommand('moopi.toggleClaude', () => setClaudePanel(context, api, !context.globalState.get('moopi.claudePanel'))),
     vscode.commands.registerCommand('moopi.sendLogs', () => sendLogs(context, api, 'user', false)),
     vscode.commands.registerCommand('moopi.voiceToggle', () => setVoice(context, !voice.on)),
     vscode.commands.registerCommand('moopi.dictate', () => toggleDictation(context, api)),
@@ -1380,6 +1391,7 @@ function activate(context) {
     await api.load(); showStatus();
     await applyLayout(context);
     if (!(await prepareWorkspace(context, api))) return; // the window reloads with ~/MOOPI open
+    setTimeout(() => offerToRemoveSiteCopy(context).catch((e) => noteError('siteCopy', e)), 12000);
     startMemory(context, api).catch((e) => noteError('memory', e));
     startMorning(context, api);
     try { await vscode.commands.executeCommand('workbench.action.closeSidebar'); } catch (e) {}
@@ -1395,18 +1407,18 @@ function activate(context) {
     setTimeout(() => speakBriefing(context, api), 12000);
     context.subscriptions.push(api.onChange(() => { if (api.token) setTimeout(() => speakBriefing(context, api), 5000); }));
     const updates = setInterval(() => checkUpdate(context, api, false), 6 * 3600 * 1000);
-    setTimeout(() => offerToRemoveSiteCopy(context).catch((e) => noteError('siteCopy', e)), 30000);
     context.subscriptions.push({ dispose: () => clearInterval(updates) });
     try { await vscode.commands.executeCommand('workbench.action.lockEditorGroup'); } catch (e) {}
     // Claude's panel (owner, 09.11.2026: "xoxlasa yopib qoysin, xoxlasa qayta ochib bilsin"): opened by itself once, for
-    // an account on its own Claude (own billing, no API key); after that it is the person's: the window remembers it
-    // open or closed, and the status bar's "Claude" opens and closes it for everyone.
+    // an account on its own Claude (own billing, no API key); after that it is the person's: "Claude" in the status bar
+    // opens and closes it for everyone, and the next start shows it the way it was left.
     const claudeOnce = async () => {
       if (context.globalState.get('moopi.claudeOnce') || !morning.onSubscription(api.me)) return;
       await context.globalState.update('moopi.claudeOnce', true);
-      if (await ensureClaude(context, api)) { await openClaude(); appPanel && appPanel.reveal(vscode.ViewColumn.One, true); }
+      await setClaudePanel(context, api, true);
     };
-    setTimeout(claudeOnce, 2500);
+    setTimeout(() => { if (context.globalState.get('moopi.claudePanel')) setClaudePanel(context, api, true).catch((e) => noteError('claudePanel', e)); else closeClaudePanel().catch(() => {}); }, 2500);
+    setTimeout(claudeOnce, 3000);
     context.subscriptions.push(api.onChange(() => setTimeout(claudeOnce, 2500)));
   })();
   // Refresh the panels now and then while the window is open; watch MOOPI for new approvals and notes.
