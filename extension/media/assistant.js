@@ -14,6 +14,7 @@
     <div class="row">
       <button class="mic" id="mic" title=""><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor" stroke="none"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></svg></button>
       <div class="field" id="field"><input id="input" type="text" autocomplete="off" spellcheck="false"><button class="send" id="send" title="">↑</button></div>
+      <button id="replay" class="tool" title=""><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6"/><path d="M18.5 6.5a8 8 0 0 1 0 11"/></svg><span></span></button>
       <button id="screen" class="tool" title=""><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="13" rx="2"/><path d="M8 21h8"/></svg><span></span></button>
       <button id="clip" class="tool" title=""><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="12" height="16" rx="2"/><path d="M9 4V3h6v1"/></svg><span></span></button>
       <button id="usage" class="tool" title=""><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 16a8 8 0 0 1 16 0"/><path d="M12 16l4-5"/><circle cx="12" cy="16" r="1.5" fill="currentColor" stroke="none"/></svg><span></span></button>
@@ -25,7 +26,7 @@
     mic.title = state === 'listening' ? T.as_tap_stop : T.as_tap_talk;
     input.placeholder = T.as_type || '';
     $('send').title = T.as_send || '';
-    for (const id of ['screen', 'clip', 'usage']) { const b = $(id); b.querySelector('span').textContent = T['as_' + id] || ''; b.title = T['as_' + id] || ''; }
+    for (const id of ['replay', 'screen', 'clip', 'usage']) { const b = $(id); b.querySelector('span').textContent = T['as_' + id] || ''; b.title = T['as_' + id] || ''; }
     stopBtn.querySelector('span').textContent = T.as_stop || '';
     $('attachX').title = T.as_remove || '';
   }
@@ -52,6 +53,7 @@
   $('send').addEventListener('click', send);
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
   input.addEventListener('input', () => field.classList.toggle('has', !!input.value.trim()));
+  $('replay').addEventListener('click', () => vscode.postMessage({ kind: 'replay' }));
   $('screen').addEventListener('click', () => vscode.postMessage({ kind: 'screen' }));
   $('clip').addEventListener('click', () => vscode.postMessage({ kind: 'clip' }));
   $('usage').addEventListener('click', () => vscode.postMessage({ kind: 'usage' }));

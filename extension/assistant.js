@@ -48,7 +48,7 @@ function resolve(ctx, view) {
 }
 function strings(ctx) {
   const keys = ['as_ready', 'as_listening', 'as_thinking', 'as_claude_thinking', 'as_reading', 'as_speaking', 'as_tap_talk', 'as_tap_stop', 'as_type', 'as_send',
-    'as_screen', 'as_clip', 'as_usage', 'as_stop', 'as_new', 'as_image', 'as_remove', 'as_answered'];
+    'as_screen', 'as_clip', 'as_usage', 'as_replay', 'as_stop', 'as_new', 'as_image', 'as_remove', 'as_answered'];
   const out = {}; for (const k of keys) out[k] = ctx.t(k); return out;
 }
 
@@ -59,6 +59,7 @@ async function onMessage(ctx, m) {
   else if (m.kind === 'screen') await askScreen(ctx);
   else if (m.kind === 'clip') await askClipboard(ctx);
   else if (m.kind === 'usage') await usage(ctx);
+  else if (m.kind === 'replay') replay(ctx);
   else if (m.kind === 'stop') stop(ctx);
   else if (m.kind === 'new') await newConversation(ctx);
   else if (m.kind === 'detach') { state.pendingImage = null; post({ kind: 'detach' }); }
@@ -250,6 +251,7 @@ function expect(ctx) {
 /** A new turn in the panel's transcript (extension.js watches it): an answer we were waiting for is spoken.
  *  Returns true when it spoke, so the plain read-aloud does not speak it a second time. */
 function onTranscript(ctx, turn) {
+  if (turn.role === 'assistant' && turn.text) ctx.context.globalState.update('moopi.lastAnswer', String(turn.text).slice(0, 6000));
   if (turn.role !== 'assistant' || !expecting()) return false;
   if (ctx.assistantVoice() && ctx.api.token) { speak(ctx, turn.text); return true; }
   phase(ctx, 'idle', ctx.t('as_answered'));
@@ -291,8 +293,8 @@ function sentences(text) {
   if (cur.trim()) out.push(cur.trim());
   return out.filter((s) => s.length > 1);
 }
-function speak(ctx, text) {
-  if (!ctx.assistantVoice() || !ctx.api.token) return;
+function speak(ctx, text, asked) {
+  if ((!asked && !ctx.assistantVoice()) || !ctx.api.token) return;
   state.stopSpeech = false;
   const pieces = sentences(text).slice(0, 12);
   if (!pieces.length) return;
@@ -320,6 +322,14 @@ function stopSpeaking() {
   if (state.speaking) { state.speaking.stop(); state.speaking = null; }
   state.queue = Promise.resolve();
   if (state.phase === 'speaking' && state.getCtx) phase(state.getCtx(), 'idle');
+}
+
+/** Claude's last answer once more, read aloud (owner, 09.11.2026), whatever the read-aloud setting says: they asked. */
+function replay(ctx) {
+  const text = ctx.context.globalState.get('moopi.lastAnswer');
+  if (!text || !ctx.api.token) { note(ctx, ctx.t('as_nothing')); return; }
+  stopSpeaking();
+  speak(ctx, text, true);
 }
 
 /** A line from a background job (a quick action, a watched folder, the briefing): the bar shows it; a final
