@@ -42,6 +42,7 @@ Object.assign(T.uz, {
   dictate_copied: "Matn nusxalandi \u2014 Claude maydoniga Ctrl+V bilan qo\u2018ying.", dictate_failed: 'Ovozni matnga aylantirib bo\u2018lmadi',
   dictate_unsupported: 'Gapirib yozish bu tizimda hozircha yo\u2018q', dictate_recording: 'Yozilmoqda\u2026 to\u2018xtatish uchun yana bosing',
   update_ready: 'MOOPI yangilandi ({v}). Qayta yuklash?', updating: 'Yangilanmoqda: {v}\u2026', updated: 'Yangilandi: {v} \u2014 qayta yuklang',
+  claude_toggle: 'Claude panelini ochish yoki yopish',
   update_available: 'MOOPI\u2019ning yangi versiyasi bor: {v}.', update_now: 'Yangilash',
   dup_site: 'Kompyuterda MOOPI\u2019ning saytdan o\u2018rnatilgan eski nusxasi ham bor. Ikkita dastur kerak emas \u2014 eski nusxani o\u2018chiraymi?', dup_remove: 'O\u2018chirish',
   reload: 'Qayta yuklash', later: 'Keyinroq', up_to_date: 'MOOPI yangi ({v}).', update_failed: 'Yangilab bo\u2018lmadi', update_reloading: 'MOOPI {v} ga yangilandi \u2014 qayta yuklanmoqda\u2026',
@@ -53,6 +54,7 @@ Object.assign(T.ru, {
   dictate_copied: '\u0422\u0435\u043a\u0441\u0442 \u0441\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u043d \u2014 \u0432\u0441\u0442\u0430\u0432\u044c\u0442\u0435 \u0432 \u043f\u043e\u043b\u0435 Claude (Ctrl+V).', dictate_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043f\u0440\u0435\u0432\u0440\u0430\u0442\u0438\u0442\u044c \u0440\u0435\u0447\u044c \u0432 \u0442\u0435\u043a\u0441\u0442',
   dictate_unsupported: '\u041d\u0430\u0434\u0438\u043a\u0442\u043e\u0432\u043a\u0430 \u0432 \u044d\u0442\u043e\u0439 \u0441\u0438\u0441\u0442\u0435\u043c\u0435 \u043f\u043e\u043a\u0430 \u043d\u0435\u0434\u043e\u0441\u0442\u0443\u043f\u043d\u0430', dictate_recording: '\u0417\u0430\u043f\u0438\u0441\u044c\u2026 \u043d\u0430\u0436\u043c\u0438\u0442\u0435 \u0435\u0449\u0451 \u0440\u0430\u0437, \u0447\u0442\u043e\u0431\u044b \u043e\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u044c',
   update_ready: 'MOOPI \u043e\u0431\u043d\u043e\u0432\u043b\u0451\u043d ({v}). \u041f\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c?', updating: '\u041e\u0431\u043d\u043e\u0432\u043b\u0435\u043d\u0438\u0435: {v}\u2026', updated: '\u041e\u0431\u043d\u043e\u0432\u043b\u0435\u043d\u043e: {v} \u2014 \u043f\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u0435',
+  claude_toggle: '\u041e\u0442\u043a\u0440\u044b\u0442\u044c \u0438\u043b\u0438 \u0437\u0430\u043a\u0440\u044b\u0442\u044c \u043f\u0430\u043d\u0435\u043b\u044c Claude',
   update_available: '\u0414\u043e\u0441\u0442\u0443\u043f\u043d\u0430 \u043d\u043e\u0432\u0430\u044f \u0432\u0435\u0440\u0441\u0438\u044f MOOPI: {v}.', update_now: '\u041e\u0431\u043d\u043e\u0432\u0438\u0442\u044c',
   dup_site: '\u041d\u0430 \u043a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440\u0435 \u0435\u0441\u0442\u044c \u0438 \u0441\u0442\u0430\u0440\u0430\u044f \u043a\u043e\u043f\u0438\u044f MOOPI, \u0443\u0441\u0442\u0430\u043d\u043e\u0432\u043b\u0435\u043d\u043d\u0430\u044f \u0441 \u0441\u0430\u0439\u0442\u0430. \u0414\u0432\u0435 \u043f\u0440\u043e\u0433\u0440\u0430\u043c\u043c\u044b \u043d\u0435 \u043d\u0443\u0436\u043d\u044b \u2014 \u0443\u0434\u0430\u043b\u0438\u0442\u044c \u0441\u0442\u0430\u0440\u0443\u044e \u043a\u043e\u043f\u0438\u044e?', dup_remove: '\u0423\u0434\u0430\u043b\u0438\u0442\u044c',
   reload: '\u041f\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c', later: '\u041f\u043e\u0437\u0436\u0435', update_reloading: 'MOOPI обновлён до {v} \u2014 перезагрузка\u2026', up_to_date: 'MOOPI \u0430\u043a\u0442\u0443\u0430\u043b\u0435\u043d ({v}).', update_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0431\u043d\u043e\u0432\u0438\u0442\u044c',
@@ -251,7 +253,7 @@ window.addEventListener('message', (e) => {
       if (m.moopi === 'ready') {
         // the app's own sign-in lives in its origin: a window signed in hands it over (moopi.uz since 0.9.5)
         if (api.token) pushToApp({ moopi: 'token', token: api.token });
-        sendState(context, api); setTimeout(() => openClaude().catch(() => {}), 1500); return;
+        sendState(context, api); return;
       }
       if (m.moopi === 'getState') sendState(context, api);
       else if (m.moopi === 'openClaude') await openClaude();
@@ -266,7 +268,6 @@ window.addEventListener('message', (e) => {
     } catch (e) { reportError(context, api, 'appMessage', e); }
   });
   appPanel.onDidDispose(() => { appPanel = null; });
-  appPanel.onDidChangeViewState((e) => { if (e.webviewPanel.active) setTimeout(() => openClaude().catch(() => {}), 300); });
   return appPanel;
 }
 
@@ -640,11 +641,12 @@ async function ensureClaude(context, api) {
   if (vscode.extensions.getExtension('Anthropic.claude-code') || vscode.extensions.getExtension('anthropic.claude-code')) { claudeState = 'ready'; if (api) sendState(context, api); return true; }
   claudeState = 'installing'; if (api) sendState(context, api);
   try {
-    await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: t('installing_claude') }, async () => {
-      await vscode.commands.executeCommand('workbench.extensions.installExtension', 'anthropic.claude-code');
-    });
+    // VS Code's own "Installing…" notices would come up in English over the first start.
+    let quiet = false;
+    try { await vscode.commands.executeCommand('notifications.toggleDoNotDisturbMode'); quiet = true; } catch (e) {}
+    try { await vscode.commands.executeCommand('workbench.extensions.installExtension', 'anthropic.claude-code'); }
+    finally { if (quiet) await vscode.commands.executeCommand('notifications.toggleDoNotDisturbMode').then(undefined, () => {}); }
     claudeState = 'ready'; if (api) sendState(context, api);
-    vscode.window.showInformationMessage(t('claude_installed'));
     setTimeout(() => vscode.commands.executeCommand('workbench.action.reloadWindow'), 1500); // the bar's place (Claude's container) exists after a reload
     return true;
   } catch (e) {
@@ -657,7 +659,7 @@ async function ensureClaude(context, api) {
 /** Claude Code's own panel, in the editor area: the chat in the middle of the MOOPI window. */
 async function openClaude() {
   const ext = vscode.extensions.getExtension('Anthropic.claude-code') || vscode.extensions.getExtension('anthropic.claude-code');
-  if (!ext) { vscode.window.showWarningMessage(t('no_claude')); return; }
+  if (!ext) { if (claudeState !== 'installing' && appCtx) await ensureClaude(appCtx.context, appCtx.api); return; }
   if (!ext.isActive) { try { await ext.activate(); } catch (e) {} }
   const commands = await vscode.commands.getCommands(true);
   for (const c of ['claude-vscode.sidebar.open', 'claude-vscode.primaryEditor.open', 'claude-vscode.editor.open']) {
@@ -1321,15 +1323,19 @@ async function offerToRemoveSiteCopy(context) {
   for (const u of copies) require('child_process').spawn(u, [], { detached: true, stdio: 'ignore' }).unref();
 }
 
-let claudeOpened = false;
+let appCtx = null, claudeShownOnce = false;
 function activate(context) {
   const api = new Api(context);
   errorApi = api; errorExt = String(context.extension.packageJSON.version || '');
+  appCtx = { context, api };
   panels = ['bugun', 'tasdiqlar', 'fayllar'].map((id) => new Panel(id, api, context));
   for (const p of panels) context.subscriptions.push(vscode.window.registerWebviewViewProvider('moopi.' + p.id, p, { webviewOptions: { retainContextWhenHidden: true } }));
   const status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
   status.command = 'moopi.signIn';
   context.subscriptions.push(status);
+  const claudeBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 200);
+  claudeBar.text = '$(comment-discussion) Claude'; claudeBar.tooltip = t('claude_toggle'); claudeBar.command = 'moopi.toggleClaude'; claudeBar.show();
+  context.subscriptions.push(claudeBar);
   const showStatus = () => { status.text = api.me ? `$(account) MOOPI · ${api.me.name || api.me.email || ''}` : '$(account) MOOPI'; status.show(); };
   context.subscriptions.push(api.onChange(() => { showStatus(); refreshAll(); }));
   assistant.init(() => assistantContext(context, api), context);
@@ -1338,6 +1344,10 @@ function activate(context) {
     vscode.commands.registerCommand('moopi.signOut', async () => { await api.signOut(); vscode.window.showInformationMessage(t('signed_out')); }),
     vscode.commands.registerCommand('moopi.refresh', () => refreshAll()),
     vscode.commands.registerCommand('moopi.openClaude', () => openClaude()),
+    vscode.commands.registerCommand('moopi.toggleClaude', async () => {
+      if (!claudeShownOnce) { claudeShownOnce = true; await openClaude(); return; } // this start's first press: it shows
+      await vscode.commands.executeCommand('workbench.action.toggleAuxiliaryBar');
+    }),
     vscode.commands.registerCommand('moopi.sendLogs', () => sendLogs(context, api, 'user', false)),
     vscode.commands.registerCommand('moopi.voiceToggle', () => setVoice(context, !voice.on)),
     vscode.commands.registerCommand('moopi.dictate', () => toggleDictation(context, api)),
@@ -1388,16 +1398,16 @@ function activate(context) {
     setTimeout(() => offerToRemoveSiteCopy(context).catch((e) => noteError('siteCopy', e)), 30000);
     context.subscriptions.push({ dispose: () => clearInterval(updates) });
     try { await vscode.commands.executeCommand('workbench.action.lockEditorGroup'); } catch (e) {}
-    // One program on a computer for everyone (owner, 08.11.2026): Claude comes into the window only for a person on a
-    // Claude subscription (own billing, no API key); anyone else has MOOPI's app over the whole window, with its own
-    // chat on MOOPI's server. Checked again whenever the account changes (signing in, the subscription switched on).
-    const claudeIfSubscribed = async () => {
-      if (claudeOpened || !morning.onSubscription(api.me)) return;
-      claudeOpened = true;
+    // Claude's panel (owner, 09.11.2026: "xoxlasa yopib qoysin, xoxlasa qayta ochib bilsin"): opened by itself once, for
+    // an account on its own Claude (own billing, no API key); after that it is the person's: the window remembers it
+    // open or closed, and the status bar's "Claude" opens and closes it for everyone.
+    const claudeOnce = async () => {
+      if (context.globalState.get('moopi.claudeOnce') || !morning.onSubscription(api.me)) return;
+      await context.globalState.update('moopi.claudeOnce', true);
       if (await ensureClaude(context, api)) { await openClaude(); appPanel && appPanel.reveal(vscode.ViewColumn.One, true); }
     };
-    setTimeout(claudeIfSubscribed, 2500);
-    context.subscriptions.push(api.onChange(() => setTimeout(claudeIfSubscribed, 2500)));
+    setTimeout(claudeOnce, 2500);
+    context.subscriptions.push(api.onChange(() => setTimeout(claudeOnce, 2500)));
   })();
   // Refresh the panels now and then while the window is open; watch MOOPI for new approvals and notes.
   const timer = setInterval(() => { if (api.token) refreshAll(); }, 120000);

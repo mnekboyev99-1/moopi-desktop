@@ -63,6 +63,10 @@
         "title": "MOOPI: Kirish"
       },
       {
+        "command": "moopi.toggleClaude",
+        "title": "MOOPI: Claude panelini ochish yoki yopish"
+      },
+      {
         "command": "moopi.signOut",
         "title": "MOOPI: Chiqish"
       },

