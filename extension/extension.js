@@ -514,7 +514,7 @@ const LAYOUT = {
   'workbench.navigationControl.enabled': false,
   'workbench.startupEditor': 'none',
   'workbench.tips.enabled': false,
-  'workbench.secondarySideBar.defaultVisibility': 'visible',
+  'workbench.secondarySideBar.defaultVisibility': 'hidden', // Claude's panel opens when it is wanted, never as an empty column
   'breadcrumbs.enabled': false,
   'extensions.ignoreRecommendations': true,
   'security.workspace.trust.enabled': false,
