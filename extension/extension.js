@@ -9,6 +9,7 @@ const quick = require('./quick');
 const memory = require('./memory');
 const bridge = require('./bridge');
 const morning = require('./morning');
+const claudeAccountCheck = require('./claude-account');
 const update = require('./update');
 const install = require('./install');
 const fs = require('fs');
@@ -86,7 +87,7 @@ Object.assign(T.uz, {
   as_need_mic: "Mac mikrofonga ruxsat bermagan. Ochilgan oynada MOOPI Desktop (yoki VSCodium) ni yoqing va dasturni qayta oching.",
   as_need_screen: "Mac ekranni olishga ruxsat bermagan. Ochilgan oynada «Ekranni yozib olish» ro'yxatida MOOPI Desktop (yoki VSCodium) ni yoqing va dasturni qayta oching.",
   as_too_short: "Juda qisqa — tugmani bosib, gapirib bo'lgach yana bosing.",
-  as_claude_thinking: "Claude o‘ylayapti…", as_reading: "O‘qiyapman…", as_listening_short: "Eshityapman…", as_answered: "Javob Claude panelida",
+  as_not_taken: "Matn Claude’ga yetib bormadi. U nusxalangan: panelga bosib, Ctrl+V qiling.", intro_prompt: "Salom! Keling, tanishaylik: biznesim haqida savollar bering, javoblarimni xotiraga yozing.", as_claude_thinking: "Claude o‘ylayapti…", as_reading: "O‘qiyapman…", as_listening_short: "Eshityapman…", as_answered: "Javob Claude panelida",
   as_remove: "Olib tashlash", as_clip_empty: "Buferda hech narsa yo‘q — avval nusxalang", as_open_window: "Yordamchini ochish",
   as_usage: "Limit", as_usage_sent: "Claude limiti Claude panelida ochildi (5 soatlik va haftalik).", watch_pick: "Kuzatish", watch_reading: "MOOPI o'qiyapti: {f}", watch_failed: "O'qib bo'lmadi: {f}",
   quick_busy: "MOOPI hozir band — biroz kuting.", quick_done: "Tayyor: {f} — ochildi, tayyor/ papkasida.", quick_nothing: "Bajarildi.",
@@ -109,7 +110,7 @@ Object.assign(T.ru, {
   as_need_mic: "Mac не дал доступ к микрофону. В открывшемся окне включите MOOPI Desktop (или VSCodium) и перезапустите программу.",
   as_need_screen: "Mac не дал доступ к записи экрана. В открывшемся окне в списке «Запись экрана» включите MOOPI Desktop (или VSCodium) и перезапустите программу.",
   as_too_short: "Слишком коротко — нажмите, скажите и нажмите ещё раз.",
-  as_claude_thinking: "Claude думает…", as_reading: "Читаю…", as_listening_short: "Слушаю…", as_answered: "Ответ в панели Claude",
+  as_not_taken: "Текст не дошёл до Claude. Он скопирован: нажмите на панель и вставьте Ctrl+V.", intro_prompt: "Здравствуйте! Давайте познакомимся: задайте вопросы о моём бизнесе и запишите ответы в память.", as_claude_thinking: "Claude думает…", as_reading: "Читаю…", as_listening_short: "Слушаю…", as_answered: "Ответ в панели Claude",
   as_remove: "Убрать", as_clip_empty: "В буфере пусто — сначала скопируйте", as_open_window: "Открыть помощника",
   as_usage: "Лимит", as_usage_sent: "Лимит Claude открыт в панели Claude (5-часовой и недельный).", watch_pick: "Отслеживать", watch_reading: "MOOPI читает: {f}", watch_failed: "Не удалось прочитать: {f}",
   quick_busy: "MOOPI сейчас занят — подождите.", quick_done: "Готово: {f} — открыто, лежит в tayyor/.", quick_nothing: "Выполнено.",
@@ -256,7 +257,7 @@ window.addEventListener('message', (e) => {
         sendState(context, api); return;
       }
       if (m.moopi === 'getState') sendState(context, api);
-      else if (m.moopi === 'openClaude') await openClaude();
+      else if (m.moopi === 'openClaude') { await openClaude(); await assistant.focusPanel(); }
       else if (m.moopi === 'giveFile') await giveFile(context, api, m.id, m.name);
       else if (m.moopi === 'open' && typeof m.url === 'string' && /^https:\/\//.test(m.url)) await vscode.env.openExternal(vscode.Uri.parse(m.url));
       else if (m.moopi === 'googleSignIn') await vscode.env.openExternal(vscode.Uri.parse(api.base + '/auth/google/start?desktop=true'));
@@ -715,7 +716,10 @@ const onSubscription = morning.onSubscription;
 async function subscriptionNote(api) {
   if (!onSubscription(api.me)) return '';
   return "\nFoydalanuvchi Claude obunasi bilan ishlaydi: MOOPI serveri uning suhbatlaridan o'zi o'rganmaydi — xotirani " +
-    "faqat sen yuritasan, shuning uchun yozishni unutma. Ertalabki brifingni MOOPI Desktop o'zi tashkil qiladi.\n";
+    "faqat sen yuritasan, shuning uchun yozishni unutma. Ertalabki brifingni MOOPI Desktop o'zi tashkil qiladi.\n" +
+    "\nTanishuv: `xotira/biznes-pasporti.md` hali bo'sh andoza bo'lsa va foydalanuvchi tanishuvni so'rasa, biznesi haqida bir xabarda bitta savol ber: " +
+    "nima bilan shug'ullanadi, mahsulot va narxlar, mijozlar, sotuv kanallari, jamoa, asosiy muammo va maqsad. Javoblarni shu zahoti " +
+    "`biznes-pasporti.md`, `men-haqimda.md` va `odamlar.md` ga yoz. Tugagach `complete_onboarding` vositasini chaqir.\n";
 }
 
 /** Claude Code's settings for ~/MOOPI that only this computer has (.claude/settings.local.json): the memory
@@ -922,9 +926,33 @@ function claudeVersion() {
   return ext ? String((ext.packageJSON && ext.packageJSON.version) || '') : '';
 }
 function pushToApp(msg) { if (appPanel) appPanel.webview.postMessage({ fromMoopiDesktop: true, ...msg }); }
+/** Claude Code's real sign-in on this computer ('active' | 'none' | 'unknown'): the app shows one chat by it. */
+let claudeAccount = 'unknown', claudeAccountAt = 0, claudeAccountSaid = false;
+async function refreshClaudeAccount(context, api, force) {
+  if (!force && Date.now() - claudeAccountAt < 60000) return;
+  claudeAccountAt = Date.now();
+  const ext = vscode.extensions.getExtension('Anthropic.claude-code') || vscode.extensions.getExtension('anthropic.claude-code');
+  const next = ext ? await claudeAccountCheck.check(ext.extensionPath) : 'none';
+  if (next === 'unknown' && !claudeAccountSaid) { claudeAccountSaid = true; noteError('claudeAccount', new Error('auth status gave no answer')); }
+  if (next !== claudeAccount) { claudeAccount = next; sendState(context, api); }
+}
+function startClaudeAccount(context, api) {
+  const ask = (force) => refreshClaudeAccount(context, api, force).catch((e) => noteError('claudeAccount', e));
+  ask(true);
+  context.subscriptions.push(vscode.window.onDidChangeWindowState((st) => { if (st.focused) ask(false); }));
+  let tick = 0; // while signed out, soon after the person signs in; while signed in, now and then
+  const timer = setInterval(() => { tick += 1; if (claudeAccount === 'active' ? tick % 5 === 0 : vscode.window.state.focused) ask(true); }, 60000);
+  context.subscriptions.push({ dispose: () => clearInterval(timer) });
+}
+/** A person on a subscription whose business passport is still the template: the app offers the introduction. */
+function introNeeded(api) {
+  if (claudeAccount !== 'active' || !onSubscription(api.me)) return false;
+  try { return claudeAccountCheck.passportEmpty(fs.readFileSync(path.join(WORKSPACE_DIR, 'xotira', 'biznes-pasporti.md'), 'utf8')); }
+  catch (e) { return true; }
+}
 function sendState(context, api) {
   pushToApp({ moopi: 'state', platform: process.platform, arch: process.arch, appVersion: vscode.version,
-    extVersion: context.extension.packageJSON.version, claudeVersion: claudeVersion(), claudeState: (claudeIsReady(), claudeState), voice: !!voice.on,
+    extVersion: context.extension.packageJSON.version, claudeVersion: claudeVersion(), claudeState: (claudeIsReady(), claudeState), claudeAccount, introNeeded: introNeeded(api), voice: !!voice.on,
     voiceAway: context.globalState.get('moopi.voiceAway') !== false, voiceShort: context.globalState.get('moopi.voiceShort') !== false,
     assistantVoice: context.globalState.get('moopi.assistantVoice') !== false, brain: claudeIsReady(),
     launchAtLogin: !!context.globalState.get('moopi.launchAtLogin'), hotkey: String(context.globalState.get('moopi.hotkey') || ''),
@@ -945,6 +973,7 @@ async function desktopAction(context, api, action, value) {
   else if (action === 'askScreen') await assistant.askScreen(ctx);
   else if (action === 'askClipboard') await assistant.askClipboard(ctx);
   else if (action === 'usage') await assistant.usage(ctx);
+  else if (action === 'startIntro') await assistant.typeToPanel(ctx, t('intro_prompt'));
   else if (action === 'installClaude') { if (await ensureClaude(context, api)) await openClaude(); }
   else if (action === 'launchAtLogin') {
     await context.globalState.update('moopi.launchAtLogin', !!value);
@@ -977,7 +1006,7 @@ async function desktopAction(context, api, action, value) {
 /** What the assistant and the brain need from the window: strings, the API, the log, Claude's panel. */
 function assistantContext(context, api) {
   const ctx = {
-    context, api, t, lang, noteError, openClaude,
+    context, api, t, lang, noteError, openClaude, claudeStartedSince,
     reportError: (where, e) => reportError(context, api, where, e),
     sendState: () => sendState(context, api),
     assistantVoice: () => context.globalState.get('moopi.assistantVoice') !== false,
@@ -1399,6 +1428,7 @@ function activate(context) {
     setTimeout(() => offerToRemoveSiteCopy(context).catch((e) => noteError('siteCopy', e)), 12000);
     startMemory(context, api).catch((e) => noteError('memory', e));
     startMorning(context, api);
+    startClaudeAccount(context, api);
     try { await vscode.commands.executeCommand('workbench.action.closeSidebar'); } catch (e) {}
     openApp(context, api);
     try { await vscode.commands.executeCommand('workbench.action.joinAllGroups'); } catch (e) {} // an empty group left by an older version

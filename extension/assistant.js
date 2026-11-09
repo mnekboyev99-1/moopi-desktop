@@ -170,6 +170,23 @@ async function keys(ctx, submit) {
     await platform.pasteAndEnterPlain(submit);
   }
 }
+/** The keyboard into Claude's panel. In the side bar its own "focus input" command does not move the keyboard there
+ *  (the text went nowhere and the bar stayed at "Claude o'ylayapti", 09.11.2026): the view is focused first. */
+async function focusPanel() {
+  const commands = await vscode.commands.getCommands(true);
+  for (const c of ['claudeVSCodeSidebarSecondary.focus', 'claudeVSCodeSidebar.focus']) {
+    if (commands.includes(c)) { try { await vscode.commands.executeCommand(c); break; } catch (e) {} }
+  }
+  try { await vscode.commands.executeCommand('claude-vscode.focus'); } catch (e) {}
+}
+/** The text was typed; if Claude starts nothing, the bar does not wait for five minutes: it says so, the text is on the clipboard. */
+async function confirmTaken(ctx, since) {
+  if (!ctx.claudeStartedSince || await ctx.claudeStartedSince(since, 20000)) return;
+  if (state.phase !== 'thinking') return;
+  phase(ctx, 'idle'); clearTimeout(state.expectTimer); state.expecting = 0;
+  ctx.noteError('type', 'Claude did not take the text');
+  note(ctx, ctx.t('as_not_taken'));
+}
 async function toFront() {
   const st = await platform.frontState().catch(() => null);
   if (st && !st.front) { await platform.bringOwnToFront(); await wait(500); }
@@ -185,12 +202,14 @@ async function typeToPanel(ctx, text, image) {
   try {
     await toFront();
     await ctx.openClaude();
-    try { await vscode.commands.executeCommand('claude-vscode.focus'); } catch (e) {}
-    await wait(400);
+    await focusPanel();
+    await wait(700);
     if (image) { await platform.copyImage(image); await keys(ctx, false); await wait(600); }
     await vscode.env.clipboard.writeText(text);
+    const since = Date.now();
     await keys(ctx, true);
     expect(ctx);
+    confirmTaken(ctx, since).catch((e) => ctx.noteError('confirm', e));
     return true;
   } catch (e) {
     phase(ctx, 'idle');
@@ -210,8 +229,8 @@ async function slash(ctx, command) {
   try {
     await toFront();
     await ctx.openClaude();
-    try { await vscode.commands.executeCommand('claude-vscode.focus'); } catch (e) {}
-    await wait(400);
+    await focusPanel();
+    await wait(700);
     await vscode.env.clipboard.writeText(command);
     await keys(ctx, true);
     note(ctx, ctx.t('as_usage_sent'), 'info');
@@ -313,4 +332,4 @@ function report(ctx, kind, text, tool, final, asUser) {
 function listening() { return !!state.listening; }
 function current() { return state.phase; }
 function expecting() { return !!state.expecting && Date.now() - state.expecting < EXPECT_MS; }
-module.exports = { init, open, talk, askText, typeToPanel, onTranscript, askScreen, askClipboard, usage, stop, stopSpeaking, newConversation, listening, current, expecting, report };
+module.exports = { init, open, talk, askText, typeToPanel, focusPanel, onTranscript, askScreen, askClipboard, usage, stop, stopSpeaking, newConversation, listening, current, expecting, report };
