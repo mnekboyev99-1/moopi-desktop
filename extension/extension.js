@@ -830,6 +830,8 @@ async function morningCheck(context, api) {
     const action = morning.decide({ me, today, state });
     if (!action) { morningPending = null; return; }
     if (action === 'offerConnect') {
+      const first = context.globalState.get('moopi.firstSeenAt');
+      if (first && Date.now() - first < 24 * 3600 * 1000) return; // not on the first day
       await context.globalState.update('moopi.morning', { ...state, offeredAt: Date.now() });
       const pick = await vscode.window.showInformationMessage(t('connect_offer'), t('connect_yes'), t('later'));
       if (pick === t('connect_yes')) await connectClaudeAi(context, api);
@@ -1412,9 +1414,13 @@ function activate(context) {
   context.subscriptions.push(api.onChange(async () => {
     if (!api.token || context.globalState.get('moopi.welcomed')) return;
     await context.globalState.update('moopi.welcomed', true);
+    await context.globalState.update('moopi.firstSeenAt', Date.now());
     vscode.window.showInformationMessage(t('tips'), t('ok'));
-    const pick = await vscode.window.showInformationMessage(t('voice_ask'), t('yes'), t('no'));
-    if (pick === t('yes')) setVoice(context, true);
+    // One thing at a time for someone new (owner, 09.11.2026): three notices at once on the first screen was too much.
+    setTimeout(async () => {
+      const pick = await vscode.window.showInformationMessage(t('voice_ask'), t('yes'), t('no'));
+      if (pick === t('yes')) setVoice(context, true);
+    }, 10 * 60 * 1000);
   }));
   process.on('unhandledRejection', (e) => reportError(context, api, 'unhandledRejection', e));
   context.subscriptions.push(vscode.commands.registerCommand('moopi.openApp', () => openApp(context, api)));
