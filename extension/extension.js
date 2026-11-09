@@ -1312,12 +1312,16 @@ async function speakBriefing(context, api) {
 /** One MOOPI on a computer (owner, 08.11.2026): the Store's copy finds a copy installed earlier from the site and
  *  offers to remove it, once a day at most; the site copy's own uninstaller runs, so the person confirms it there. */
 async function offerToRemoveSiteCopy(context) {
+  const diagFile = path.join(require('os').homedir(), '.moopi-desktop', 'diag-sitecopy.json');
+  const diag = (o) => { try { if (fs.existsSync(diagFile)) fs.writeFileSync(diagFile, JSON.stringify({ exec: process.execPath, fromStore: install.fromStore(), local: process.env.LOCALAPPDATA, ...o })); } catch (e) {} };
+  diag({ step: 'start', copies: install.siteCopies() });
   if (process.platform !== 'win32' || !install.fromStore()) return;
   const copies = install.siteCopies();
   if (!copies.length) return;
   const asked = context.globalState.get('moopi.siteCopyAsked') || 0;
   if (Date.now() - asked < 24 * 3600 * 1000) return;
   await context.globalState.update('moopi.siteCopyAsked', Date.now());
+  diag({ step: 'shown', copies });
   const pick = await vscode.window.showInformationMessage(t('dup_site'), t('dup_remove'), t('later'));
   if (pick !== t('dup_remove')) return;
   for (const u of copies) require('child_process').spawn(u, [], { detached: true, stdio: 'ignore' }).unref();
