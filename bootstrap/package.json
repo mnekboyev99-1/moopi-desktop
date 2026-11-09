@@ -19,5 +19,16 @@
     "*"
   ],
   "main": "./extension.js",
-  "contributes": {}
+  "contributes": {
+    "configurationDefaults": {
+      "workbench.startupEditor": "none",
+      "workbench.activityBar.location": "hidden",
+      "window.commandCenter": false,
+      "window.menuBarVisibility": "compact",
+      "workbench.layoutControl.enabled": false,
+      "workbench.navigationControl.enabled": false,
+      "workbench.editor.showTabs": "none",
+      "workbench.statusBar.visible": false
+    }
+  }
 }
