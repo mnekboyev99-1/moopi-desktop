@@ -12,6 +12,7 @@ const morning = require('./morning');
 const claudeAccountCheck = require('./claude-account');
 const update = require('./update');
 const install = require('./install');
+const net = require('./net');
 const fs = require('fs');
 const path = require('path');
 
@@ -40,6 +41,7 @@ const T = {
         send_logs: '\u041e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u043e\u0442\u0447\u0451\u0442 \u043e\u0431 \u043e\u0448\u0438\u0431\u043a\u0435', logs_sent: '\u0416\u0443\u0440\u043d\u0430\u043b \u043e\u0442\u043f\u0440\u0430\u0432\u043b\u0435\u043d \u0432 MOOPI, \u0441\u043f\u0430\u0441\u0438\u0431\u043e.', logs_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u0436\u0443\u0440\u043d\u0430\u043b', installing_claude: '\u0423\u0441\u0442\u0430\u043d\u043e\u0432\u043a\u0430 Claude Code\u2026', claude_installed: 'Claude Code \u0443\u0441\u0442\u0430\u043d\u043e\u0432\u043b\u0435\u043d.' },
 };
 Object.assign(T.uz, {
+  logs_later: 'Internet yo\u2018q. Hisobot saqlab qo\u2018yildi \u2014 ulanish qaytganda o\u2018zi yuboriladi.',
   dictate_copied: "Matn nusxalandi \u2014 Claude maydoniga Ctrl+V bilan qo\u2018ying.", dictate_failed: 'Ovozni matnga aylantirib bo\u2018lmadi',
   dictate_unsupported: 'Gapirib yozish bu tizimda hozircha yo\u2018q', dictate_recording: 'Yozilmoqda\u2026 to\u2018xtatish uchun yana bosing',
   update_ready: 'MOOPI yangilandi ({v}). Qayta yuklash?', updating: 'Yangilanmoqda: {v}\u2026', updated: 'Yangilandi: {v} \u2014 qayta yuklang',
@@ -52,6 +54,7 @@ Object.assign(T.uz, {
   hotkey_bad: 'Tezkor tugma Ctrl+Alt+M ko\u2018rinishida bo\u2018lsin', workspace_opening: 'MOOPI ish papkasi ochilmoqda\u2026',
 });
 Object.assign(T.ru, {
+  logs_later: '\u041d\u0435\u0442 \u0438\u043d\u0442\u0435\u0440\u043d\u0435\u0442\u0430. \u041e\u0442\u0447\u0451\u0442 \u0441\u043e\u0445\u0440\u0430\u043d\u0451\u043d \u2014 \u043e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u0441\u044f \u0441\u0430\u043c, \u043a\u043e\u0433\u0434\u0430 \u0441\u0432\u044f\u0437\u044c \u0432\u0435\u0440\u043d\u0451\u0442\u0441\u044f.',
   dictate_copied: '\u0422\u0435\u043a\u0441\u0442 \u0441\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u043d \u2014 \u0432\u0441\u0442\u0430\u0432\u044c\u0442\u0435 \u0432 \u043f\u043e\u043b\u0435 Claude (Ctrl+V).', dictate_failed: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043f\u0440\u0435\u0432\u0440\u0430\u0442\u0438\u0442\u044c \u0440\u0435\u0447\u044c \u0432 \u0442\u0435\u043a\u0441\u0442',
   dictate_unsupported: '\u041d\u0430\u0434\u0438\u043a\u0442\u043e\u0432\u043a\u0430 \u0432 \u044d\u0442\u043e\u0439 \u0441\u0438\u0441\u0442\u0435\u043c\u0435 \u043f\u043e\u043a\u0430 \u043d\u0435\u0434\u043e\u0441\u0442\u0443\u043f\u043d\u0430', dictate_recording: '\u0417\u0430\u043f\u0438\u0441\u044c\u2026 \u043d\u0430\u0436\u043c\u0438\u0442\u0435 \u0435\u0449\u0451 \u0440\u0430\u0437, \u0447\u0442\u043e\u0431\u044b \u043e\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u044c',
   update_ready: 'MOOPI \u043e\u0431\u043d\u043e\u0432\u043b\u0451\u043d ({v}). \u041f\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c?', updating: '\u041e\u0431\u043d\u043e\u0432\u043b\u0435\u043d\u0438\u0435: {v}\u2026', updated: '\u041e\u0431\u043d\u043e\u0432\u043b\u0435\u043d\u043e: {v} \u2014 \u043f\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u0435',
@@ -555,8 +558,12 @@ const LOGS_URL = 'https://moopi.uz/api/desktop/logs'; // sessions.moopi.uz until
 const ownErrors = [];
 let logsSentAt = 0, logsSendCount = 0;
 function noteError(where, e) {
-  const line = `${new Date().toISOString()} ${where}: ${String((e && e.stack) || e).slice(0, 800)}`;
+  // The connection being away (a laptop waking from sleep, Wi-Fi dropping) is not an error of ours: it is
+  // written in this window's list — it goes with the next report — and nothing is sent for it (net.js).
+  const away = net.offline(e);
+  const line = `${new Date().toISOString()} ${where}: ${away ? 'offline: ' + net.describe(e) : String((e && e.stack) || e).slice(0, 800)}`;
   ownErrors.push(line); if (ownErrors.length > 100) ownErrors.shift();
+  if (away) { console.warn('[moopi]', line); return; }
   console.error('[moopi]', line);
   sendError(where, e);
 }
@@ -570,7 +577,7 @@ let errorsCount = 0;
 function sendError(where, e) {
   try {
     if (!errorApi || errorsCount >= 30) return;
-    const message = String((e && e.message) || e).slice(0, 500);
+    const message = net.describe(e).slice(0, 500); // with fetch's real reason: "fetch failed (CERT_HAS_EXPIRED)"
     const key = where + '|' + message.slice(0, 120), now = Date.now();
     if (now - (errorsSent.get(key) || 0) < 10 * 60 * 1000) return;
     errorsSent.set(key, now); errorsCount += 1;
@@ -600,12 +607,50 @@ function collectLogs(context, api, reason) {
   for (const f of files) { const t = tailOf(f, 60 * 1024); if (t) parts.push(`\n## ${path.relative(session, f)}\n${t}\n`); }
   return parts.join('');
 }
+/** A report that could not go because the connection was away is kept — in memory and in a file beside the
+ *  extension's own data, so closing the lid does not lose it — and goes when the connection is back: tried
+ *  once a minute while one waits, and at the next start (22.11.2026: a report failed to send and was gone). */
+let heldFile = null, heldTimer = null;
+const logReports = net.holder(async (item) => {
+  const token = errorApi && errorApi.token;
+  if (!token) throw new Error('signed out');
+  const r = await fetch(LOGS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain; charset=utf-8', Authorization: 'Bearer ' + token, 'X-MOOPI-Reason': item.reason }, body: item.text });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+}, (item) => {
+  if (!heldFile) return;
+  if (item) { fs.mkdirSync(path.dirname(heldFile), { recursive: true }); fs.writeFileSync(heldFile, JSON.stringify(item)); }
+  else { try { fs.unlinkSync(heldFile); } catch (e) { /* none was saved */ } }
+});
+function retryHeldLogs() {
+  if (heldTimer || !logReports.waiting) return;
+  heldTimer = setInterval(async () => {
+    let done = false;
+    try { done = (await logReports.flush()) || !logReports.waiting; } catch (e) { done = true; noteError('sendLogs', e); }
+    if (done) { clearInterval(heldTimer); heldTimer = null; }
+  }, 60000);
+  if (heldTimer.unref) heldTimer.unref();
+}
+/** At start: a report an earlier run could not send. */
+function takeHeldLogs(context) {
+  try {
+    heldFile = path.join(context.globalStorageUri.fsPath, 'held-report.json');
+    if (!fs.existsSync(heldFile)) return;
+    const item = JSON.parse(fs.readFileSync(heldFile, 'utf8'));
+    if (item && typeof item.text === 'string' && typeof item.reason === 'string') { logReports.take(item); retryHeldLogs(); }
+    else fs.unlinkSync(heldFile);
+  } catch (e) { try { fs.unlinkSync(heldFile); } catch (err) { /* nothing to remove */ } }
+}
 async function sendLogs(context, api, reason, quiet) {
   if (!api.token) { if (!quiet) vscode.window.showWarningMessage(t('signin')); return false; }
   try {
     const text = collectLogs(context, api, reason);
-    const r = await fetch(LOGS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain; charset=utf-8', Authorization: 'Bearer ' + api.token, 'X-MOOPI-Reason': reason }, body: text.slice(0, 1024 * 1024) });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const how = await logReports.send({ reason, text: text.slice(0, 1024 * 1024) });
+    if (how === 'held') {
+      ownErrors.push(`${new Date().toISOString()} sendLogs: offline: the report waits for the connection`);
+      retryHeldLogs();
+      if (!quiet) vscode.window.showInformationMessage(t('logs_later'));
+      return false;
+    }
     if (!quiet) vscode.window.showInformationMessage(t('logs_sent'));
     return true;
   } catch (e) {
@@ -618,6 +663,7 @@ async function sendLogs(context, api, reason, quiet) {
 let errorPingAt = 0;
 function reportError(context, api, where, e) {
   noteError(where, e);
+  if (net.offline(e)) return; // nothing to report, and the report could not be sent anyway
   const now = Date.now();
   if (now - errorPingAt > 60000) { errorPingAt = now; ping(context, api, `${where}: ${String((e && e.message) || e).slice(0, 300)}`).catch(() => {}); }
   if (now - logsSentAt > 3600 * 1000) { logsSentAt = now; logsSendCount = 0; }
@@ -1375,6 +1421,7 @@ let appCtx = null;
 function activate(context) {
   const api = new Api(context);
   errorApi = api; errorExt = String(context.extension.packageJSON.version || '');
+  takeHeldLogs(context);
   appCtx = { context, api };
   panels = ['bugun', 'tasdiqlar', 'fayllar'].map((id) => new Panel(id, api, context));
   for (const p of panels) context.subscriptions.push(vscode.window.registerWebviewViewProvider('moopi.' + p.id, p, { webviewOptions: { retainContextWhenHidden: true } }));
@@ -1474,4 +1521,6 @@ function activate(context) {
   context.subscriptions.push({ dispose: () => { clearInterval(timer); clearInterval(watchTimer); } });
 }
 function deactivate() {}
-module.exports = { activate, deactivate, _test: { prepareWorkspace, subscriptionNote, writeLocalSettings, parseTurn, morningCheck } };
+module.exports = { activate, deactivate, _test: { prepareWorkspace, subscriptionNote, writeLocalSettings, parseTurn, morningCheck,
+  // errors and reports (test/errors.test.js)
+  noteError, reportError, sendLogs, takeHeldLogs, logReports, ownErrors, setErrorApi: (api, version) => { errorApi = api; errorExt = version || ''; } } };
