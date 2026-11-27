@@ -221,6 +221,27 @@ async function typeToPanel(ctx, text, image) {
     return false;
   } finally { state.typing = false; ctx.sendState(); }
 }
+/** Puts [text] into Claude's input box and leaves it there for the person to go on writing — the mention of
+ *  a file dragged over from the app (0.9.11). Nothing is sent. False when it could not be typed (another
+ *  window in front, the keys refused, the panel busy with a question): the text is on the clipboard then,
+ *  and the caller says so. */
+async function putInPanel(ctx, text) {
+  if (state.typing) { await vscode.env.clipboard.writeText(text).catch(() => {}); return false; }
+  state.typing = true;
+  try {
+    await toFront();
+    await ctx.openClaude();
+    await focusPanel();
+    await wait(700);
+    await vscode.env.clipboard.writeText(text);
+    await keys(ctx, false);
+    return true;
+  } catch (e) {
+    await vscode.env.clipboard.writeText(text).catch(() => {});
+    if (!e || e.code !== 'front') ctx.reportError('put', e);
+    return false;
+  } finally { state.typing = false; }
+}
 /** A command of Claude's own (/usage: the account's limits) typed into the panel; no answer is awaited —
  *  Claude shows it in a window of its own. */
 async function slash(ctx, command) {
@@ -342,4 +363,4 @@ function report(ctx, kind, text, tool, final, asUser) {
 function listening() { return !!state.listening; }
 function current() { return state.phase; }
 function expecting() { return !!state.expecting && Date.now() - state.expecting < EXPECT_MS; }
-module.exports = { init, open, talk, askText, typeToPanel, focusPanel, onTranscript, askScreen, askClipboard, usage, stop, stopSpeaking, newConversation, listening, current, expecting, report };
+module.exports = { init, open, talk, askText, typeToPanel, putInPanel, focusPanel, onTranscript, askScreen, askClipboard, usage, stop, stopSpeaking, newConversation, listening, current, expecting, report };

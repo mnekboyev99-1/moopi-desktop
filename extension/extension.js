@@ -261,7 +261,7 @@ window.addEventListener('message', (e) => {
       }
       if (m.moopi === 'getState') sendState(context, api);
       else if (m.moopi === 'openClaude') { await openClaude(); await assistant.focusPanel(); }
-      else if (m.moopi === 'giveFile') await giveFile(context, api, m.id, m.name);
+      else if (m.moopi === 'giveFile') await giveFile(context, api, m.id, m.name, m.drop === true);
       else if (m.moopi === 'open' && typeof m.url === 'string' && /^https:\/\//.test(m.url)) await vscode.env.openExternal(vscode.Uri.parse(m.url));
       else if (m.moopi === 'googleSignIn') await vscode.env.openExternal(vscode.Uri.parse(api.base + '/auth/google/start?desktop=true'));
       else if (m.moopi === 'desktop') await desktopAction(context, api, String(m.action || ''), m.value);
@@ -275,10 +275,11 @@ window.addEventListener('message', (e) => {
   return appPanel;
 }
 
-/** A MOOPI file handed to Claude: downloaded into the workspace (~/MOOPI/fayllar), its @-mention put on the
- *  clipboard (Claude's input box is Anthropic's; it cannot be typed into from here), text files also opened
- *  so the panel attaches them by itself. */
-async function giveFile(context, api, id, name) {
+/** A MOOPI file handed to Claude: downloaded into the workspace (~/MOOPI/fayllar). Dragged over from the app
+ *  onto Claude's panel ([drop], 0.9.11): its @-mention is pasted into Claude's input box, as the person's own
+ *  Ctrl+V would, and they write the request after it. By the button, or when it could not be pasted: the
+ *  mention is on the clipboard and a notice says so; text files are also opened so the panel attaches them. */
+async function giveFile(context, api, id, name, drop) {
   const folder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
   if (!folder || !api.token) { vscode.window.showWarningMessage(t('file_failed')); return; }
   const safe = String(name || ('fayl-' + id)).replace(/[\/\\:*?"<>|]+/g, '_').slice(-120);
@@ -292,6 +293,7 @@ async function giveFile(context, api, id, name) {
     await context.globalState.update('moopi.fromMoopi', [...from].slice(-500));
     await vscode.workspace.fs.writeFile(target, bytes);
     const mention = '@fayllar/' + safe;
+    if (drop && await assistant.putInPanel(assistantContext(context, api), mention + ' ')) return;
     await vscode.env.clipboard.writeText(mention + ' ');
     if (/\.(txt|md|csv|json|html|xml|yaml|yml)$/i.test(safe)) {
       try { await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(target), { preview: true, preserveFocus: true, viewColumn: vscode.ViewColumn.Beside }); } catch (e) {}
@@ -1521,6 +1523,6 @@ function activate(context) {
   context.subscriptions.push({ dispose: () => { clearInterval(timer); clearInterval(watchTimer); } });
 }
 function deactivate() {}
-module.exports = { activate, deactivate, _test: { prepareWorkspace, subscriptionNote, writeLocalSettings, parseTurn, morningCheck,
+module.exports = { activate, deactivate, _test: { giveFile, prepareWorkspace, subscriptionNote, writeLocalSettings, parseTurn, morningCheck,
   // errors and reports (test/errors.test.js)
   noteError, reportError, sendLogs, takeHeldLogs, logReports, ownErrors, setErrorApi: (api, version) => { errorApi = api; errorExt = version || ''; } } };
