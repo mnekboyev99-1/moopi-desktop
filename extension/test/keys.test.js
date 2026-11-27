@@ -25,3 +25,14 @@ test('no key is sent when another window is in front (macOS)', { skip: process.p
     await assert.rejects(platform.pasteAndEnter(true), (e) => e.code === 'front');
   } finally { platform._setOwn(null); }
 });
+
+// 0.9.12: an https address goes to the browser through the system, not through the editor's English question.
+test('an https address is handed to the system as one argument; anything else is refused', () => {
+  const url = 'https://moopi.uz/api/integrations/instagram/start?ticket=a1B2&x=1%2B2';
+  assert.deepStrictEqual(platform.openCommand(url, 'darwin'), ['/usr/bin/open', [url]]);
+  assert.deepStrictEqual(platform.openCommand(url, 'win32'), ['rundll32.exe', ['url.dll,FileProtocolHandler', url]]);
+  assert.deepStrictEqual(platform.openCommand(url, 'linux'), ['xdg-open', [url]]);
+  for (const bad of ['http://moopi.uz/', 'file:///etc/passwd', 'moopi://x', 'https://moopi.uz/a b', 'https://moopi.uz/"x', "https://moopi.uz/'x", '', null, 'calc.exe'])
+    assert.strictEqual(platform.openCommand(bad, 'win32'), null, String(bad));
+});
+

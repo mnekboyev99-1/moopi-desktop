@@ -99,3 +99,16 @@ test('online, a report goes at once as before', async () => {
   assert.equal(calls.filter((c) => /desktop\/logs$/.test(c[1])).length, 1);
   assert.match(shown[0][1], /yuborildi/);
 });
+
+test('closing the window is written down here and sent nowhere (0.9.12)', async () => {
+  calls = []; network = 'up';
+  ext.reportError(context, api, 'unhandledRejection', Object.assign(new Error('Canceled'), { name: 'Canceled' }));
+  ext.reportError(context, api, 'unhandledRejection', new Error('Channel has been closed'));
+  ext.noteError('checkUpdate', new Error('Canceled'));
+  await settle();
+  assert.deepEqual(calls, [], 'no error, no ping and no report for a window that was closed');
+  const last = ext.ownErrors.slice(-3).join('\n');
+  assert.match(last, /unhandledRejection: closing: Canceled/);
+  assert.match(last, /unhandledRejection: closing: Channel has been closed/);
+});
+

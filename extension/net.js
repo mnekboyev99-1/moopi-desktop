@@ -40,6 +40,16 @@ function offline(e) {
   return /^(TypeError: )?fetch failed$/.test(bare.trim()) && codes.length === 0;
 }
 
+/** Is this the window itself going away (closed or reloaded) while something still waited — a notice nobody
+ *  had answered, a call to a part of the editor that is already gone? The editor cancels what is pending and
+ *  says "Canceled" or "Channel has been closed". Nothing of ours to fix: seen 14–27.11.2026 at every closing
+ *  of one person's window, each sent to the owner as a new error (0.9.12). */
+function closing(e) {
+  if (!e) return false;
+  const said = String((typeof e === 'object' && e.message) || e).trim();
+  return (typeof e === 'object' && e.name === 'Canceled') || /^(Error: )?Cancell?ed$/.test(said) || /Channel has been closed/.test(said);
+}
+
 /** The message with its real reason: "fetch failed (ENOTFOUND mcp.moopi.uz)". */
 function describe(e) {
   const message = String((e && e.message) || e);
@@ -85,4 +95,4 @@ function holder(send, save = () => {}) {
   };
 }
 
-module.exports = { offline, describe, holder };
+module.exports = { offline, closing, describe, holder };

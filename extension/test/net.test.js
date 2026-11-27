@@ -106,3 +106,16 @@ test('against a real server: held while it is down, delivered when it is up', as
     assert.deepEqual(bodies, ['the report']);
   } finally { await new Promise((r) => server.close(r)); }
 });
+
+test('the window being closed is told apart from a fault (0.9.12)', () => {
+  const net = require('../net.js');
+  const canceled = Object.assign(new Error('Canceled'), { name: 'Canceled' }); // the editor's own CancellationError
+  assert.equal(net.closing(canceled), true);
+  assert.equal(net.closing(new Error('Canceled')), true);
+  assert.equal(net.closing('Canceled'), true);
+  assert.equal(net.closing(new Error('Channel has been closed')), true);
+  assert.equal(net.closing(new Error('HTTP 502')), false);
+  assert.equal(net.closing(new Error('The upload was canceled by the server')), false); // a sentence that merely has the word
+  assert.equal(net.closing(null), false);
+});
+

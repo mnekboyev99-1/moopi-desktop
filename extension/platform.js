@@ -24,6 +24,23 @@ function run(file, args) {
   });
 }
 
+// ---------- an https address in the person's own browser ----------
+/** The command that hands an https address to the system. Not the editor's own env.openExternal: that first
+ *  asks, in English, "Do you want MOOPI Desktop to open the external website?" with the whole address under it
+ *  (every Telegram sign-in, every Instagram connection, 0.9.12). Only https, no spaces or quotes: the address is
+ *  one argument of a program started without a shell. */
+function openCommand(url, plat = process.platform) {
+  if (typeof url !== 'string' || !/^https:\/\/[^\s"'<>`]+$/i.test(url)) return null;
+  if (plat === 'darwin') return ['/usr/bin/open', [url]];
+  if (plat === 'win32') return ['rundll32.exe', ['url.dll,FileProtocolHandler', url]];
+  return ['xdg-open', [url]];
+}
+async function openLink(url) {
+  const command = openCommand(url);
+  if (!command) throw new Error('not an https address');
+  await run(command[0], command[1]);
+}
+
 // ---------- the microphone: tap to start, tap to stop; two minutes at most ----------
 const RECORD_PS = `param([string]$Out, [string]$Stop, [int]$Max = 120)
 $code = @"
@@ -392,4 +409,4 @@ async function pressEnter() {
   throw new Error('typing: unsupported platform');
 }
 function openAccessibility() { if (MAC) cp.execFile('/usr/bin/open', ['x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility'], () => {}); }
-module.exports = { WIN, MAC, startRecording, screenshot, clipboardImage, copyImage, play, activateWindow, openPrivacy, openAccessibility, explorerMenu, startHotkey, parseHotkey, pasteAndEnter, pasteAndEnterPlain, pressEnter, pressEnterPlain, frontState, bringOwnToFront, ownApp, _setOwn, ps, run };
+module.exports = { WIN, MAC, openCommand, openLink, startRecording, screenshot, clipboardImage, copyImage, play, activateWindow, openPrivacy, openAccessibility, explorerMenu, startHotkey, parseHotkey, pasteAndEnter, pasteAndEnterPlain, pressEnter, pressEnterPlain, frontState, bringOwnToFront, ownApp, _setOwn, ps, run };

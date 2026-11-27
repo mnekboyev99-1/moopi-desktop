@@ -202,7 +202,7 @@ class Panel {
       else if (m.kind === 'signIn') { await this.api.signInWith(m.body); }
       else if (m.kind === 'approve') { await this.api.post(`/approvals/${m.id}/approve`); await refreshAll(); }
       else if (m.kind === 'reject') { await this.api.post(`/approvals/${m.id}/reject`); await refreshAll(); }
-      else if (m.kind === 'openFile') { const r = await this.api.get(`/files/${m.id}/link`); const url = r && (r.url || r.link); if (url) vscode.env.openExternal(vscode.Uri.parse(url.startsWith('http') ? url : this.api.base.replace(/\/api$/, '') + url)); }
+      else if (m.kind === 'openFile') { const r = await this.api.get(`/files/${m.id}/link`); const url = r && (r.path ? this.api.base + r.path : (r.url || r.link)); if (url) await openOutside(url.startsWith('http') ? url : this.api.base.replace(/\/api$/, '') + url); }
       else if (m.kind === 'openClaude') { await openClaude(); }
       else if (m.kind === 'refresh') { await this.refresh(); }
       else if (m.kind === 'sendLogs') { await sendLogs(this.context, this.api, 'user', false); }
@@ -262,8 +262,8 @@ window.addEventListener('message', (e) => {
       if (m.moopi === 'getState') sendState(context, api);
       else if (m.moopi === 'openClaude') { await openClaude(); await assistant.focusPanel(); }
       else if (m.moopi === 'giveFile') await giveFile(context, api, m.id, m.name, m.drop === true);
-      else if (m.moopi === 'open' && typeof m.url === 'string' && /^https:\/\//.test(m.url)) await vscode.env.openExternal(vscode.Uri.parse(m.url));
-      else if (m.moopi === 'googleSignIn') await vscode.env.openExternal(vscode.Uri.parse(api.base + '/auth/google/start?desktop=true'));
+      else if (m.moopi === 'open' && typeof m.url === 'string' && /^https:\/\//.test(m.url)) await openOutside(m.url);
+      else if (m.moopi === 'googleSignIn') await openOutside(api.base + '/auth/google/start?desktop=true');
       else if (m.moopi === 'desktop') await desktopAction(context, api, String(m.action || ''), m.value);
       else if (m.moopi === 'theme') await applyTheme(context, String(m.value || ''));
       else if (m.moopi === 'signedIn' && m.token) {
@@ -273,6 +273,13 @@ window.addEventListener('message', (e) => {
   });
   appPanel.onDidDispose(() => { appPanel = null; });
   return appPanel;
+}
+
+/** An https address in the person's browser: through the system, so the editor's English question
+ *  ("Do you want … to open the external website?") never comes up; the editor's own way only if that fails. */
+async function openOutside(url) {
+  try { await platform.openLink(url); }
+  catch (e) { noteError('openLink', e); await vscode.env.openExternal(vscode.Uri.parse(url)); }
 }
 
 /** A MOOPI file handed to Claude: downloaded into the workspace (~/MOOPI/fayllar). Dragged over from the app
@@ -562,10 +569,11 @@ let logsSentAt = 0, logsSendCount = 0;
 function noteError(where, e) {
   // The connection being away (a laptop waking from sleep, Wi-Fi dropping) is not an error of ours: it is
   // written in this window's list — it goes with the next report — and nothing is sent for it (net.js).
-  const away = net.offline(e);
-  const line = `${new Date().toISOString()} ${where}: ${away ? 'offline: ' + net.describe(e) : String((e && e.stack) || e).slice(0, 800)}`;
+  // Neither is the window being closed while something still waited (net.closing).
+  const away = net.offline(e), gone = !away && net.closing(e);
+  const line = `${new Date().toISOString()} ${where}: ${away ? 'offline: ' + net.describe(e) : gone ? 'closing: ' + net.describe(e) : String((e && e.stack) || e).slice(0, 800)}`;
   ownErrors.push(line); if (ownErrors.length > 100) ownErrors.shift();
-  if (away) { console.warn('[moopi]', line); return; }
+  if (away || gone) { console.warn('[moopi]', line); return; }
   console.error('[moopi]', line);
   sendError(where, e);
 }
@@ -665,7 +673,7 @@ async function sendLogs(context, api, reason, quiet) {
 let errorPingAt = 0;
 function reportError(context, api, where, e) {
   noteError(where, e);
-  if (net.offline(e)) return; // nothing to report, and the report could not be sent anyway
+  if (net.offline(e) || net.closing(e)) return; // nothing to report (and, offline, the report could not be sent anyway)
   const now = Date.now();
   if (now - errorPingAt > 60000) { errorPingAt = now; ping(context, api, `${where}: ${String((e && e.message) || e).slice(0, 300)}`).catch(() => {}); }
   if (now - logsSentAt > 3600 * 1000) { logsSentAt = now; logsSendCount = 0; }
@@ -856,7 +864,7 @@ async function connectClaudeAi(context, api) {
     const r = await fetch(connectorUrl() + '/connector/desktop-link', { method: 'POST', headers: { Authorization: 'Bearer ' + api.token } });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const { url } = await r.json();
-    await vscode.env.openExternal(vscode.Uri.parse(url));
+    await openOutside(url);
   } catch (e) {
     reportError(context, api, 'connectClaudeAi', e);
     vscode.window.showWarningMessage(t('connect_failed').replace('{e}', String(e.message || e)));
@@ -968,7 +976,7 @@ function startMorning(context, api) {
 }
 
 /** What the app's Desktop section shows, sent after every change. */
-let updating = '';
+let updating = '', installedTag = '';
 function claudeVersion() {
   const ext = vscode.extensions.getExtension('Anthropic.claude-code') || vscode.extensions.getExtension('anthropic.claude-code');
   return ext ? String((ext.packageJSON && ext.packageJSON.version) || '') : '';
@@ -1094,8 +1102,9 @@ function registerUri(context, api) {
 }
 
 /** The extension updates itself from GitHub releases (moopi.moopi-desktop-<version>.vsix): a newer release
- *  is installed over the built-in copy and the window offers a reload — fixes reach people in minutes, no
- *  new Desktop build. Checked 20 s after start and every 6 hours; "MOOPI: Yangilanishni tekshirish" at will. */
+ *  is installed over the built-in copy by itself and runs from the next start — fixes reach people within a
+ *  day, no new Desktop build. Checked 20 s after start and every 6 hours; "MOOPI: Yangilanishni tekshirish"
+ *  at will, which loads the new version at once. */
 function compareVersions(a, b) {
   const pa = String(a).split('.').map(Number), pb = String(b).split('.').map(Number);
   for (let i = 0; i < 3; i++) if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) - (pb[i] || 0);
@@ -1110,16 +1119,11 @@ async function checkUpdate(context, api, manual, atStart) {
   try {
     const { tag, url } = await update.latestRelease(repo);
     if (compareVersions(tag, current) <= 0) { if (manual) vscode.window.showInformationMessage(t('up_to_date').replace('{v}', current)); return; }
-    // Never on its own (owner, 08.11.2026: "avtomatik emas — yangilash bildirishnomasi chiqadi, user bosadi
-    // yangilaydi"): a notice with "Yangilash", once a day at most for the same version; the update menu item
-    // (manual) installs at once, since the person asked for it.
-    if (!manual) {
-      const asked = context.globalState.get('moopi.updateAsked') || {};
-      if (asked.v === tag && Date.now() - (asked.at || 0) < 24 * 3600 * 1000) return;
-      await context.globalState.update('moopi.updateAsked', { v: tag, at: Date.now() });
-      const pick = await vscode.window.showInformationMessage(t('update_available').replace('{v}', tag), t('update_now'), t('later'));
-      if (pick !== t('update_now')) return;
-    }
+    // By itself (owner, 27.11.2026). From 08.11 a notice with "Yangilash" waited for a press — and one person
+    // stayed on 0.9.9 for four days, closing the window with the notice still open. Now the new version is
+    // installed quietly, with no notice and no reload under the person's hands: it is the one that runs from
+    // the next start. The menu's own "check" still loads it at once, since the person asked.
+    if (!manual && installedTag === tag) return; // already in place, waiting for the next start
     updating = t('updating').replace('{v}', tag); sendState(context, api);
     const file = path.join(require('os').tmpdir(), `moopi.moopi-desktop-${tag}.vsix`);
     const dl = await fetch(url, { headers: { 'User-Agent': 'moopi-desktop' } });
@@ -1127,8 +1131,10 @@ async function checkUpdate(context, api, manual, atStart) {
     fs.writeFileSync(file, Buffer.from(await dl.arrayBuffer()));
     await vscode.commands.executeCommand('workbench.extensions.installExtension', vscode.Uri.file(file));
     try { fs.unlinkSync(file); } catch (e) {}
+    installedTag = tag;
     updating = t('updated').replace('{v}', tag); sendState(context, api);
-    // The person pressed "Yangilash" (or asked from the menu): the new version comes up right away.
+    if (!manual) return;
+    // The person asked from the menu: the new version comes up right away.
     vscode.window.showInformationMessage(t('update_reloading').replace('{v}', tag));
     setTimeout(() => vscode.commands.executeCommand('workbench.action.reloadWindow'), 2000);
   } catch (e) {
@@ -1523,6 +1529,6 @@ function activate(context) {
   context.subscriptions.push({ dispose: () => { clearInterval(timer); clearInterval(watchTimer); } });
 }
 function deactivate() {}
-module.exports = { activate, deactivate, _test: { giveFile, prepareWorkspace, subscriptionNote, writeLocalSettings, parseTurn, morningCheck,
+module.exports = { activate, deactivate, _test: { giveFile, checkUpdate, prepareWorkspace, subscriptionNote, writeLocalSettings, parseTurn, morningCheck,
   // errors and reports (test/errors.test.js)
   noteError, reportError, sendLogs, takeHeldLogs, logReports, ownErrors, setErrorApi: (api, version) => { errorApi = api; errorExt = version || ''; } } };
